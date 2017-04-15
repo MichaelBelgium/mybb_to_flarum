@@ -39,7 +39,7 @@
         while($crow = $categories->fetch_assoc())
         {
             $slug = str_replace(" ", "-", strtolower($crow["name"]));
-            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, position) VALUES ({$crow["fid"]},'{$crow["name"]}', '$slug', '{$crow["description"]}', $c_pos)");
+            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, color, position) VALUES ({$crow["fid"]},'{$crow["name"]}', '$slug', '{$crow["description"]}', '".rand_color()."', $c_pos)");
             if($result === false)
                 echo "Error executing query: ".$flarum_db->error."<br />";
             else
@@ -52,7 +52,7 @@
                     while($srow = $forums->fetch_assoc())
                     {
                         $slug = str_replace(" ", "-", strtolower($srow["name"]));
-                        $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, parent_id, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '$slug', '{$srow["description"]}', {$crow["fid"]}, $f_pos)");
+                        $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '$slug', '{$srow["description"]}', {$crow["fid"]}, '".rand_color()."', $f_pos)");
 
                         $f_pos++;
                     }

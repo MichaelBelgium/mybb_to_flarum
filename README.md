@@ -17,3 +17,4 @@ When this is done, you only need to get these files to anywhere on your webhost.
 ## To do
 * posts that are in bbcode should be converted
 * only categories and their forums will be converted, subforums under forums should be too
+* participants_count should be filled in when migrating threads to discussions
