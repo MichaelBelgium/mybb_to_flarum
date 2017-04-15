@@ -9,11 +9,9 @@
     else if($mybb_db->connect_errno)
         die("MyBB db connection failed: ". $mybb_db->connect_error);
 
-    echo "<p>Connection successful.</p>";
-
     echo "<p>Migrating users ...";
 
-    $users = $mybb_db->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit FROM  ".Config::$MYBB_PREFIX."users ");
+    $users = $mybb_db->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups FROM  ".Config::$MYBB_PREFIX."users ");
     if($users->num_rows > 0)
     {
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."users");
@@ -24,6 +22,18 @@
             $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."users (id, username, email, is_activated, password, join_time, last_seen_time, discussions_count, comments_count) VALUES ({$row["uid"]},'{$row["username"]}', '{$row["email"]}', 1, '$password', '{$row["regdate"]}', '{$row["lastvisit"]}', {$row["threadnum"]}, {$row["postnum"]})");
             if($result === false)
                 echo "Error executing query: ". $flarum_db->error. "<br/>";
+
+            $usergroup = (int)$row["usergroup"];
+            $othergroups = explode(",", $row["additionalgroups"]);
+
+            if($usergroup > 7)
+                $flarum_db->query( "INSERT INTO ".Config::$FLARUM_PREFIX."users_groups (user_id, group_id) VALUES ({$row["uid"]}, {$usergroup})");
+
+            foreach($othergroups as $group)
+            {
+                if((int)$group <= 7) continue;
+                $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."users_groups (user_id, group_id) VALUES ({$row["uid"]}, $group)");
+            }
         }
     }
     echo " done: migrated ".$users->num_rows." users.</p>";
@@ -100,4 +110,21 @@
     }
 
     echo " done: migrated ".$threads->num_rows." threads with their posts";
+
+
+   echo "<p>Migrating custom user groups...";
+
+    $groups = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."usergroups WHERE type = 2");
+    if($groups->num_rows > 0)
+    {
+        $flarum_db->query("DELETE FROM ".Config::$FLARUM_PREFIX."groups WHERE id > 4");
+
+        while ($row = $groups->fetch_assoc())
+        {
+            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."groups (id, name_singular, name_plural, color) VALUES ({$row["gid"]}, '{$row["title"]}', '{$row["title"]}', '".rand_color()."')");
+            if ($result === false)
+                echo "Error executing query: ".$flarum_db->error."<br/>";
+        }
+    }
+    echo " done: migrated ".$groups->num_rows." custom groups.</p>";
 ?>
