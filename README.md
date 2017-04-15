@@ -7,18 +7,19 @@ This is a PHP migration script to migrate most data from a mybb forum to a fresh
 * Users (their passwords are ALL reset to a bcrypt hash from current time)
 * Categories
 * Forums (not complete: see to do)
-* Posts (not complete: see to do)
+* Posts
 * Groups
 
-## Intructions
+## Instructions
 **This script has been tested with: MyBB v1.8.11 and Flarum v0.1.0-beta.6**
 
 To get this to work u only need your (old) mybb database and a (recommended: fresh - altho it truncates everything) installed flarum forum.
 Afterwards you need to edit the `Config.php` file so it can connect.
 
-When this is done, you only need to get these files to anywhere on your webhost. At last but not least browse to `www.mywebsite.com/mybb_to_flarum.php` and let it do its job.
+When this is done, you only need to upload these files to the <u>root of your Flarum installation</u>.
+This is because Flarum uses <a href='https://github.com/s9e/TextFormatter'>the s9e TextFormatter</a> and the script uses it too to parse and save the content of the mybb posts.
+At last but not least browse to `www.mywebsite.com/mybb_to_flarum.php` and let it do its job.
 
 ## To do
-* posts that are in bbcode should be converted
 * only categories and their forums will be converted, subforums under forums should be too
 * participants_count should be filled in when migrating threads to discussions

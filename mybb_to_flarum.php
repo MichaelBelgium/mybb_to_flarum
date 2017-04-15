@@ -1,4 +1,7 @@
-<?php
+    <?php
+    use s9e\TextFormatter\Bundles\Forum as TextFormatter;
+
+    include "vendor/autoload.php";
     require "Config.php";
 
     $flarum_db = new mysqli(Config::$FLARUM_SERVER, Config::$FLARUM_USER, Config::$FLARUM_PASSWORD, Config::$FLARUM_DB);
@@ -100,7 +103,8 @@
                 {
                     while($row = $posts->fetch_assoc())
                     {
-                        $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '{$flarum_db->real_escape_string($row["message"])}', 1)");
+                        $content = $flarum_db->real_escape_string(TextFormatter::parse($row["message"]));
+                        $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1)");
                         if($result === false)
                             echo "Error executing query: ".$flarum_db->error."<br/>";
                     }
@@ -108,9 +112,7 @@
             }
         }
     }
-
     echo " done: migrated ".$threads->num_rows." threads with their posts";
-
 
    echo "<p>Migrating custom user groups...";
 
