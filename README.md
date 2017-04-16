@@ -22,4 +22,3 @@ At last but not least browse to `www.mywebsite.com/mybb_to_flarum.php` and let i
 
 ## To do
 * only categories and their forums will be converted, subforums under forums should be too
-* participants_count should be filled in when migrating threads to discussions

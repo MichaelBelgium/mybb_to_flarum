@@ -23,8 +23,7 @@
         {
             $password = password_hash(time(),PASSWORD_BCRYPT );
             $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."users (id, username, email, is_activated, password, join_time, last_seen_time, discussions_count, comments_count) VALUES ({$row["uid"]},'{$row["username"]}', '{$row["email"]}', 1, '$password', '{$row["regdate"]}', '{$row["lastvisit"]}', {$row["threadnum"]}, {$row["postnum"]})");
-            if($result === false)
-                echo "Error executing query: ". $flarum_db->error. "<br/>";
+            if($result === false) die("Error executing query: ". $flarum_db->error);
 
             $usergroup = (int)$row["usergroup"];
             $othergroups = explode(",", $row["additionalgroups"]);
@@ -53,8 +52,7 @@
         {
             $slug = str_replace(" ", "-", strtolower($crow["name"]));
             $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, color, position) VALUES ({$crow["fid"]},'{$crow["name"]}', '$slug', '{$crow["description"]}', '".rand_color()."', $c_pos)");
-            if($result === false)
-                echo "Error executing query: ".$flarum_db->error."<br />";
+            if($result === false) die("Error executing query: ".$flarum_db->error);
             else
             {
                 //subforums
@@ -87,28 +85,33 @@
 
         while($trow = $threads->fetch_assoc())
         {
+            $participants = array();
             $slug = str_replace(" ", "-", strtolower($trow["subject"]));
             $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (id, title, comments_count, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky) 
             VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', {$trow["replies"]}, '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '{$flarum_db->real_escape_string($slug)}', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
 
-            if($result === false)
-                echo "Error executing query: ".$flarum_db->error."<br/>";
+            if($result === false) die("Error executing query: ".$flarum_db->error);
             else
             {
                 $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$trow["fid"]})");
-
-                //posts/replies/topics
                 $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
+                $lastpost = null;
+
                 if($posts->num_rows > 0)
                 {
                     while($row = $posts->fetch_assoc())
                     {
+                        if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
+
                         $content = $flarum_db->real_escape_string(TextFormatter::parse($row["message"]));
                         $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1)");
-                        if($result === false)
-                            echo "Error executing query: ".$flarum_db->error."<br/>";
+
+                        if($result === false)  die("Error executing query: ".$flarum_db->error);
+                        $lastpost = (int)$row["pid"];
                     }
                 }
+
+                $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."discussions SET participants_count = ". count($participants) . ", last_post_id = $lastpost WHERE id = {$trow["tid"]}");
             }
         }
     }
@@ -124,8 +127,7 @@
         while ($row = $groups->fetch_assoc())
         {
             $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."groups (id, name_singular, name_plural, color) VALUES ({$row["gid"]}, '{$row["title"]}', '{$row["title"]}', '".rand_color()."')");
-            if ($result === false)
-                echo "Error executing query: ".$flarum_db->error."<br/>";
+            if ($result === false) die("Error executing query: ".$flarum_db->error);
         }
     }
     echo " done: migrated ".$groups->num_rows." custom groups.</p>";
