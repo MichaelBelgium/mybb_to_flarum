@@ -46,12 +46,11 @@
     if($categories->num_rows > 0)
     {
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."tags");
-
         $c_pos = 0;
+
         while($crow = $categories->fetch_assoc())
         {
-            $slug = str_replace(" ", "-", strtolower($crow["name"]));
-            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, color, position) VALUES ({$crow["fid"]},'{$crow["name"]}', '$slug', '{$crow["description"]}', '".rand_color()."', $c_pos)");
+            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, color, position) VALUES ({$crow["fid"]},'{$crow["name"]}', '".to_slug($crow["name"])."', '{$crow["description"]}', '".rand_color()."', $c_pos)");
             if($result === false) die("Error executing query: ".$flarum_db->error);
             else
             {
@@ -62,9 +61,7 @@
                     $f_pos = 0;
                     while($srow = $forums->fetch_assoc())
                     {
-                        $slug = str_replace(" ", "-", strtolower($srow["name"]));
-                        $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '$slug', '{$srow["description"]}', {$crow["fid"]}, '".rand_color()."', $f_pos)");
-
+                        $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '".to_slug($srow["name"])."', '{$srow["description"]}', {$crow["fid"]}, '".rand_color()."', $f_pos)");
                         $f_pos++;
                     }
                 }
@@ -86,9 +83,8 @@
         while($trow = $threads->fetch_assoc())
         {
             $participants = array();
-            $slug = str_replace(" ", "-", strtolower($trow["subject"]));
-            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (id, title, comments_count, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky) 
-            VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', {$trow["replies"]}, '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '{$flarum_db->real_escape_string($slug)}', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
+            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (id, title, comments_count, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky)
+            VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', {$trow["replies"]}, '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
 
             if($result === false) die("Error executing query: ".$flarum_db->error);
             else

@@ -20,4 +20,12 @@ function rand_color()
     return '#' . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
 }
 
+function to_slug($text)
+{
+    $text = preg_replace("/[^\w]/", "-", $text);
+    $text = preg_replace("/\-+/","-", $text);
+    $text = trim($text, "-");
+    return strtolower($text);
+}
+
 ?>
