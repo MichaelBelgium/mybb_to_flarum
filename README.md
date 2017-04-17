@@ -22,3 +22,5 @@ At last but not least browse to `www.mywebsite.com/mybb_to_flarum.php` and let i
 
 ## To do
 * only categories and their forums will be converted, subforums under forums should be too
+* avatars
+* add last_post_number in tbl discussions and number in tbl posts to migrate
