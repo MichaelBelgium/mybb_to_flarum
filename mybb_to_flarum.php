@@ -60,7 +60,7 @@
             $f_pos = 0;
             while($srow = $forums->fetch_assoc())
             {
-                $result = $flarum_db->query("INSERT INTO " . Config::$FLARUM_PREFIX . "tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '" . to_slug($srow["name"]) . "', '{$flarum_db->real_escape_string($srow["description"])}', {$crow["fid"]}, '" . rand_color() . "', $f_pos)");
+                $result = $flarum_db->query("INSERT INTO " . Config::$FLARUM_PREFIX . "tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '" . to_slug($srow["name"], true) . "', '{$flarum_db->real_escape_string($srow["description"])}', {$crow["fid"]}, '" . rand_color() . "', $f_pos)");
                 if($result === false) die("Error executing query: ".$flarum_db->error."(".$flarum_db->errno.")");
 
                 $f_pos++;
@@ -70,7 +70,7 @@
                 if ($subforums->num_rows === 0) continue;
 
                 while ($subrow = $subforums->fetch_assoc())
-                    $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, color, is_hidden) VALUES ({$subrow["fid"]}, '{$subrow["name"]}', '".to_slug($subrow["name"])."', '{$subrow["description"]}', '".rand_color()."', 1)");
+                    $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, color, is_hidden) VALUES ({$subrow["fid"]}, '{$subrow["name"]}', '".to_slug($subrow["name"], true)."', '{$subrow["description"]}', '".rand_color()."', 1)");
             }
             $c_pos++;
         }
