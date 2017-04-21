@@ -50,21 +50,27 @@
 
         while($crow = $categories->fetch_assoc())
         {
-            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, color, position) VALUES ({$crow["fid"]},'{$crow["name"]}', '".to_slug($crow["name"])."', '{$crow["description"]}', '".rand_color()."', $c_pos)");
+            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, color, position) VALUES ({$crow["fid"]},'{$crow["name"]}', '".to_slug($crow["name"])."', '{$crow["description"]}',  '".rand_color()."', $c_pos)");
             if($result === false) die("Error executing query: ".$flarum_db->error);
-            else
+
+            //forums
+            $forums = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."forums WHERE type = 'f' AND pid = {$crow["fid"]}");
+            if($forums->num_rows === 0) continue;
+
+            $f_pos = 0;
+            while($srow = $forums->fetch_assoc())
             {
-                //subforums
-                $forums = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."forums WHERE type = 'f' AND pid = {$crow["fid"]}");
-                if($forums->num_rows > 0)
-                {
-                    $f_pos = 0;
-                    while($srow = $forums->fetch_assoc())
-                    {
-                        $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '".to_slug($srow["name"])."', '{$srow["description"]}', {$crow["fid"]}, '".rand_color()."', $f_pos)");
-                        $f_pos++;
-                    }
-                }
+                $result = $flarum_db->query("INSERT INTO " . Config::$FLARUM_PREFIX . "tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '" . to_slug($srow["name"]) . "', '{$flarum_db->real_escape_string($srow["description"])}', {$crow["fid"]}, '" . rand_color() . "', $f_pos)");
+                if($result === false) die("Error executing query: ".$flarum_db->error."(".$flarum_db->errno.")");
+
+                $f_pos++;
+
+                //subforums as secundary tags
+                $subforums = $mybb_db->query("SELECT * FROM " . Config::$MYBB_PREFIX . "forums WHERE type = 'f' AND pid = {$srow["fid"]}");
+                if ($subforums->num_rows === 0) continue;
+
+                while ($subrow = $subforums->fetch_assoc())
+                    $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, color, is_hidden) VALUES ({$subrow["fid"]}, '{$subrow["name"]}', '".to_slug($subrow["name"])."', '{$subrow["description"]}', '".rand_color()."', 1)");
             }
             $c_pos++;
         }
