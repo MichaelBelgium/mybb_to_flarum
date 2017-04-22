@@ -1,6 +1,7 @@
 <?php
 class Config
 {
+
     public static $FLARUM_SERVER = "127.0.0.1";
     public static $FLARUM_USER = "";
     public static $FLARUM_PASSWORD = "";
@@ -12,6 +13,8 @@ class Config
     public static $MYBB_PASSWORD  = "";
     public static $MYBB_DB = "";
     public static $MYBB_PREFIX = "mybb_";
+
+    public static $MYBB_SKIP_SOFTDELETED = false;
 }
 
 function rand_color()

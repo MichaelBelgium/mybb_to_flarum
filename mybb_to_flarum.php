@@ -80,7 +80,7 @@
 
     echo "<p>Migrating threads and thread posts...";
 
-    $threads = $mybb_db->query("SELECT tid, fid, subject, replies, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky FROM ".Config::$MYBB_PREFIX."threads");
+    $threads = $mybb_db->query("SELECT tid, fid, subject, replies, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM ".Config::$MYBB_PREFIX."threads");
     if($threads->num_rows > 0)
     {
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."discussions");
@@ -89,6 +89,11 @@
 
         while($trow = $threads->fetch_assoc())
         {
+            if(Config::$MYBB_SKIP_SOFTDELETED)
+            {
+                if($trow["visible"] == -1) continue;
+            }
+
             $participants = array();
             $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (id, title, comments_count, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky)
             VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', {$trow["replies"]}, '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
