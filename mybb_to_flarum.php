@@ -12,9 +12,9 @@
     else if($mybb_db->connect_errno)
         die("MyBB db connection failed: ". $mybb_db->connect_error);
 
-    echo "<p>Migrating users ...";
+    echo "<p>Migrating users ...<br />";
 
-    $users = $mybb_db->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups FROM  ".Config::$MYBB_PREFIX."users ");
+    $users = $mybb_db->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar FROM ".Config::$MYBB_PREFIX."users ");
     if($users->num_rows > 0)
     {
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."users");
@@ -36,10 +36,25 @@
                 if((int)$group <= 7) continue;
                 $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."users_groups (user_id, group_id) VALUES ({$row["uid"]}, $group)");
             }
+
+            if(Config::$MIGRATE_AVATARS)
+            {
+                if(!empty(Config::$MYBB_PATH) && !empty($row["avatar"]))
+                {
+                    $avatar = explode("?", basename($row["avatar"]))[0];
+                    if(file_exists(Config::$MYBB_PATH.$row["avatar"]))
+                    {
+                        if(copy(Config::$MYBB_PATH.$row["avatar"],Config::$FLARUM_AVATAR_PATH.$avatar))
+                            $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."users SET avatar_path = '$avatar' WHERE id = {$row["uid"]}");
+                    }
+                    else
+                        echo "Warning: avatar of user id {$row["uid"]} doesn't exist in the mybb avatar path<br />";
+                }
+            }
         }
     }
     echo " done: migrated ".$users->num_rows." users.</p>";
-    echo "<p>Migrating categories to tags and forums to sub-tags ...";
+    echo "<p>Migrating categories to tags and forums to sub-tags ...<br />";
 
     //categories
     $categories = $mybb_db->query("SELECT fid, name, description FROM ".Config::$MYBB_PREFIX."forums WHERE type = 'c'");
@@ -78,7 +93,7 @@
     }
     echo " done: migrated ".$categories->num_rows." categories and their forums";
 
-    echo "<p>Migrating threads and thread posts...";
+    echo "<>Migrating threads and thread posts...<br />";
 
     $threads = $mybb_db->query("SELECT tid, fid, subject, replies, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM ".Config::$MYBB_PREFIX."threads");
     if($threads->num_rows > 0)
@@ -103,20 +118,19 @@
             {
                 $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$trow["fid"]})");
                 $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
+
                 $lastpost = null;
+                if($posts->num_rows === 0) continue;
 
-                if($posts->num_rows > 0)
+                while($row = $posts->fetch_assoc())
                 {
-                    while($row = $posts->fetch_assoc())
-                    {
-                        if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
+                    if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
 
-                        $content = $flarum_db->real_escape_string(TextFormatter::parse($row["message"]));
-                        $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1)");
+                    $content = $flarum_db->real_escape_string(TextFormatter::parse($row["message"]));
+                    $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1)");
 
-                        if($result === false)  die("Error executing query: ".$flarum_db->error);
-                        $lastpost = (int)$row["pid"];
-                    }
+                    if($result === false)  die("Error executing query: ".$flarum_db->error);
+                    $lastpost = (int)$row["pid"];
                 }
 
                 $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."discussions SET participants_count = ". count($participants) . ", last_post_id = $lastpost WHERE id = {$trow["tid"]}");
@@ -125,7 +139,7 @@
     }
     echo " done: migrated ".$threads->num_rows." threads with their posts";
 
-   echo "<p>Migrating custom user groups...";
+   echo "<p>Migrating custom user groups...<br />";
 
     $groups = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."usergroups WHERE type = 2");
     if($groups->num_rows > 0)

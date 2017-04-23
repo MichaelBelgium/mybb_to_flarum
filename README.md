@@ -9,6 +9,7 @@ This is a PHP migration script to migrate most data from a mybb forum to a fresh
 * Forums (not complete: see to do)
 * Posts
 * Groups
+* Avatars (if specified)
 
 ## Instructions
 **This script has been tested with: MyBB v1.8.11 and Flarum v0.1.0-beta.6**
@@ -20,7 +21,8 @@ When this is done, you only need to upload these files to the <u>root of your Fl
 This is because Flarum uses <a href='https://github.com/s9e/TextFormatter'>the s9e TextFormatter</a> and the script uses it too to parse and save the content of the mybb posts.
 At last but not least browse to `www.mywebsite.com/mybb_to_flarum.php` and let it do its job.
 
+Note: If u specify u want to migrate avatars then an <u>installed MyBB copy is required also.</u>
+
 ## To do
 * only categories and their forums will be converted, subforums under forums should be too
-* avatars
 * add last_post_number in tbl discussions and number in tbl posts to migrate

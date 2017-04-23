@@ -1,12 +1,14 @@
 <?php
 class Config
 {
+    public static $MIGRATE_AVATARS = false;                 //enable or disable migration of avatars
 
     public static $FLARUM_SERVER = "127.0.0.1";
     public static $FLARUM_USER = "";
     public static $FLARUM_PASSWORD = "";
     public static $FLARUM_DB = "";
     public static $FLARUM_PREFIX = "flar_";
+    public static $FLARUM_AVATAR_PATH = "assets/avatars/";  //relative path from the script, normally not needed to edit this. (Only used if $MIGRATE_AVATARS = true)
 
     public static $MYBB_SERVER = "127.0.0.1";
     public static $MYBB_USER = "";
@@ -14,7 +16,8 @@ class Config
     public static $MYBB_DB = "";
     public static $MYBB_PREFIX = "mybb_";
 
-    public static $MYBB_SKIP_SOFTDELETED = false;
+    public static $MYBB_SKIP_SOFTDELETED = false;           //if true, the script won't migrate threads in mybb that are soft deleted (Only used if $MIGRATE_AVATARS = true)
+    public static $MYBB_PATH = "/var/www/html/mybb/";       //absolute path of mybb installation (Only used if $MIGRATE_AVATARS = true)
 }
 
 function rand_color()
