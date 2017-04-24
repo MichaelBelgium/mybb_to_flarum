@@ -19,9 +19,9 @@ Afterwards you need to edit the `Config.php` file so it can connect.
 
 When this is done, you only need to upload these files to the <u>root of your Flarum installation</u>.
 This is because Flarum uses <a href='https://github.com/s9e/TextFormatter'>the s9e TextFormatter</a> and the script uses it too to parse and save the content of the mybb posts.
-At last but not least browse to `www.mywebsite.com/mybb_to_flarum.php` and let it do its job.
+At last but not least browse to `www.mywebsite.com/myflarumforum/mybb_to_flarum.php` and let it do its job.
 
-Note: If u specify u want to migrate avatars then an <u>installed MyBB copy is required also.</u>
+Note: If u specify u want to migrate avatars then your (old) <u>MyBB forum is required also.</u>
 
 ## To do
 * only categories and their forums will be converted, subforums under forums should be too
