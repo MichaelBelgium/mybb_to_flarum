@@ -3,6 +3,8 @@
 
     include "vendor/autoload.php";
     require "Config.php";
+    
+    set_time_limit(300);
 
     $flarum_db = new mysqli(Config::$FLARUM_SERVER, Config::$FLARUM_USER, Config::$FLARUM_PASSWORD, Config::$FLARUM_DB);
     $mybb_db = new mysqli(Config::$MYBB_SERVER, Config::$MYBB_USER, Config::$MYBB_PASSWORD, Config::$MYBB_DB);
