@@ -1,6 +1,4 @@
     <?php
-    use s9e\TextFormatter\Bundles\Forum as TextFormatter;
-
     include "vendor/autoload.php";
     require "Config.php";
 
@@ -126,7 +124,7 @@
                 {
                     if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
 
-                    $content = $flarum_db->real_escape_string(TextFormatter::parse($row["message"]));
+                    $content = $flarum_db->real_escape_string($parser->parse($row["message"]));
                     $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1)");
 
                     if($result === false)  die("Error executing query: ".$flarum_db->error);

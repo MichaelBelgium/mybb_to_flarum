@@ -45,4 +45,27 @@ function to_slug($text, $check_exist = false)
 
     return strtolower($text);
 }
+
+$configurator = new s9e\TextFormatter\Configurator;
+
+$configurator->BBCodes->addFromRepository('B');
+$configurator->BBCodes->addFromRepository('I');
+$configurator->BBCodes->addFromRepository('U');
+$configurator->BBCodes->addFromRepository('S');
+$configurator->BBCodes->addFromRepository('URL');
+$configurator->BBCodes->addFromRepository('IMG');
+$configurator->BBCodes->addFromRepository('EMAIL');
+$configurator->BBCodes->addFromRepository('CODE');
+$configurator->BBCodes->addFromRepository('QUOTE');
+$configurator->BBCodes->addFromRepository('LIST');
+$configurator->BBCodes->addFromRepository('DEL');
+$configurator->BBCodes->addFromRepository('COLOR');
+$configurator->BBCodes->addFromRepository('*');
+$configurator->BBCodes->addFromRepository('FONT');
+$configurator->BBCodes->addFromRepository('ALIGN');
+
+$configurator->BBCodes->addCustom('[hr]','<hr>');
+
+extract($configurator->finalize());
+
 ?>
