@@ -68,12 +68,14 @@
             if($result === false) die("Error executing query: ".$flarum_db->error);
 
             //forums
-            $forums = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."forums WHERE type = 'f' AND pid = {$crow["fid"]}");
+            $forums = $mybb_db->query("SELECT fid, name, description, linkto FROM ".Config::$MYBB_PREFIX."forums WHERE type = 'f' AND pid = {$crow["fid"]}");
             if($forums->num_rows === 0) continue;
 
             $f_pos = 0;
             while($srow = $forums->fetch_assoc())
             {
+                if(!empty($srow["linkto"])) continue;
+
                 $result = $flarum_db->query("INSERT INTO " . Config::$FLARUM_PREFIX . "tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '" . to_slug($srow["name"], true) . "', '{$flarum_db->real_escape_string($srow["description"])}', {$crow["fid"]}, '$color', $f_pos)");
                 if($result === false) die("Error executing query: ".$flarum_db->error."(".$flarum_db->errno.")");
 
@@ -91,7 +93,7 @@
     }
     echo " done: migrated ".$categories->num_rows." categories and their forums";
 
-    echo "<>Migrating threads and thread posts...<br />";
+    echo "<p>Migrating threads and thread posts...<br />";
 
     $threads = $mybb_db->query("SELECT tid, fid, subject, replies, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM ".Config::$MYBB_PREFIX."threads");
     if($threads->num_rows > 0)

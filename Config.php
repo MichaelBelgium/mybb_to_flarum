@@ -63,8 +63,7 @@ $configurator->BBCodes->addFromRepository('COLOR');
 $configurator->BBCodes->addFromRepository('*');
 $configurator->BBCodes->addFromRepository('FONT');
 $configurator->BBCodes->addFromRepository('ALIGN');
-
-$configurator->BBCodes->addCustom('[hr]','<hr>');
+$configurator->BBCodes->addFromRepository('HR');
 
 extract($configurator->finalize());
 
