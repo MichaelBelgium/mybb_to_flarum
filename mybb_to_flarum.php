@@ -11,6 +11,9 @@
         die("Flarum db connection failed: ". $flarum_db->connect_error);
     else if($mybb_db->connect_errno)
         die("MyBB db connection failed: ". $mybb_db->connect_error);
+    
+    $mybb_db->query("SET CHARSET 'utf8';");
+    $flarum_db->query("SET CHARSET 'utf8';");
 
     echo "<p>Migrating users ...<br />";
 
