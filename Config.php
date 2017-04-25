@@ -29,8 +29,8 @@ function to_slug($text, $check_exist = false)
 {
     global $flarum_db;
 
-    $text = preg_replace("/[^\w]/", "-", $text);
-    $text = preg_replace("/\-+/","-", $text);
+    $text = preg_replace("/[^\w]/u", "-", $text);
+    $text = preg_replace("/\-+/u","-", $text);
     $text = trim($text, "-");
 
     if($check_exist)
