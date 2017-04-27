@@ -48,6 +48,7 @@ function to_slug($text, $check_exist = false)
 
 $configurator = new s9e\TextFormatter\Configurator;
 
+$configurator->rootRules->createParagraphs(true);
 $configurator->BBCodes->addFromRepository('B');
 $configurator->BBCodes->addFromRepository('I');
 $configurator->BBCodes->addFromRepository('U');
