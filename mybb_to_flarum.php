@@ -119,32 +119,31 @@
             VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', {$trow["replies"]}, '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
 
             if($result === false) die("Error executing query: ".$flarum_db->error);
-            else
+
+            $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$trow["fid"]})");
+            $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
+
+            $lastpost = null;
+            if($posts->num_rows === 0) continue;
+
+            $lastpostnumber = 1;
+            while($row = $posts->fetch_assoc())
             {
-                $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$trow["fid"]})");
-                $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
+                if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
+                $content = $flarum_db->real_escape_string($parser->parse($row["message"]));
 
-                $lastpost = null;
-                if($posts->num_rows === 0) continue;
+                $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved, number) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1, $lastpostnumber)");
+                if($result === false)  die("Error executing query: ".$flarum_db->error);
 
-                while($row = $posts->fetch_assoc())
-                {
-                    if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
-
-                    $content = $flarum_db->real_escape_string($parser->parse($row["message"]));
-                    $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1)");
-
-                    if($result === false)  die("Error executing query: ".$flarum_db->error);
-                    $lastpost = (int)$row["pid"];
-                }
-
-                $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."discussions SET participants_count = ". count($participants) . ", last_post_id = $lastpost WHERE id = {$trow["tid"]}");
+                $lastpostnumber++;
+                $lastpost = (int)$row["pid"];
             }
+            $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."discussions SET participants_count = ". count($participants) . ", last_post_id = $lastpost, last_post_number = $lastpostnumber WHERE id = {$trow["tid"]}");
         }
     }
     echo " done: migrated ".$threads->num_rows." threads with their posts";
 
-   echo "<p>Migrating custom user groups...<br />";
+    echo "<p>Migrating custom user groups...<br />";
 
     $groups = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."usergroups WHERE type = 2");
     if($groups->num_rows > 0)
