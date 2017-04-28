@@ -25,4 +25,5 @@ Note: If u specify u want to migrate avatars then your (old) <u>MyBB forum is re
 
 ## To do
 * forums with a redirect hyperlink are skipped. Flarum doesn't support them (yet).
-* add last_post_number in tbl discussions and number in tbl posts to migrate
+* Eventually add private messages as private discussions or some kind
+* Try to assign user ip's to posts
