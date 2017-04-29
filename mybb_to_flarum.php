@@ -5,11 +5,11 @@
     set_time_limit(0);
 
     $flarum_db = new mysqli(Config::$FLARUM_SERVER, Config::$FLARUM_USER, Config::$FLARUM_PASSWORD, Config::$FLARUM_DB);
-    $mybb_db = new mysqli(Config::$MYBB_SERVER, Config::$MYBB_USER, Config::$MYBB_PASSWORD, Config::$MYBB_DB);
-
     if($flarum_db->connect_errno)
         die("Flarum db connection failed: ". $flarum_db->connect_error);
-    else if($mybb_db->connect_errno)
+
+    $mybb_db = new mysqli(Config::$MYBB_SERVER, Config::$MYBB_USER, Config::$MYBB_PASSWORD, Config::$MYBB_DB);
+    if($mybb_db->connect_errno)
         die("MyBB db connection failed: ". $mybb_db->connect_error);
     
     $mybb_db->query("SET CHARSET 'utf8';");
