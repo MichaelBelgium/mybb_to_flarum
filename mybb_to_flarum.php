@@ -65,12 +65,14 @@
     {
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."tags");
         $c_pos = 0;
+        $parent_tags = array();
 
         while($crow = $categories->fetch_assoc())
         {
             $color = rand_color();
             $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (id, name, slug, description, color, position) VALUES ({$crow["fid"]},'{$crow["name"]}', '".to_slug($crow["name"])."', '{$crow["description"]}',  '$color', $c_pos)");
             if($result === false) die("Error executing query: ".$flarum_db->error);
+            $parent_tags[$crow["fid"]] = 0;
 
             //forums
             $forums = $mybb_db->query("SELECT fid, name, description, linkto FROM ".Config::$MYBB_PREFIX."forums WHERE type = 'f' AND pid = {$crow["fid"]}");
@@ -83,6 +85,7 @@
 
                 $result = $flarum_db->query("INSERT INTO " . Config::$FLARUM_PREFIX . "tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '" . to_slug($srow["name"], true) . "', '{$flarum_db->real_escape_string($srow["description"])}', {$crow["fid"]}, '$color', $f_pos)");
                 if($result === false) die("Error executing query: ".$flarum_db->error."(".$flarum_db->errno.")");
+                $parent_tags[$srow["fid"]] = $crow["fid"];
 
                 $f_pos++;
 
@@ -121,6 +124,9 @@
             if($result === false) die("Error executing query: ".$flarum_db->error);
 
             $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$trow["fid"]})");
+            if ($parent_tags[$trow["fid"]]!=0) {
+        	$flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$parent_tags[$trow["fid"]]})");
+            }
             $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
 
             $lastpost = null;
