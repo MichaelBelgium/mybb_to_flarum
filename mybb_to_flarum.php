@@ -14,6 +14,7 @@
     
     $mybb_db->query("SET CHARSET 'utf8';");
     $flarum_db->query("SET CHARSET 'utf8';");
+    $parent_tags = array();
 
     echo "<p>Migrating users ...<br />";
 
@@ -56,7 +57,7 @@
             }
         }
     }
-    echo " done: migrated ".$users->num_rows." users.</p>";
+    echo "Done: migrated ".$users->num_rows." users.</p>";
     echo "<p>Migrating categories to tags and forums to sub-tags ...<br />";
 
     //categories
@@ -65,7 +66,6 @@
     {
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."tags");
         $c_pos = 0;
-        $parent_tags = array();
 
         while($crow = $categories->fetch_assoc())
         {
@@ -99,7 +99,7 @@
             $c_pos++;
         }
     }
-    echo " done: migrated ".$categories->num_rows." categories and their forums";
+    echo "Done: migrated ".$categories->num_rows." categories and their forums";
 
     echo "<p>Migrating threads and thread posts...<br />";
 
@@ -113,9 +113,7 @@
         while($trow = $threads->fetch_assoc())
         {
             if(Config::$MYBB_SKIP_SOFTDELETED)
-            {
                 if($trow["visible"] == -1) continue;
-            }
 
             $participants = array();
             $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (id, title, comments_count, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky)
@@ -124,11 +122,10 @@
             if($result === false) die("Error executing query: ".$flarum_db->error);
 
             $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$trow["fid"]})");
-            if ($parent_tags[$trow["fid"]]!=0) {
-        	$flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$parent_tags[$trow["fid"]]})");
-            }
-            $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
+            if (array_key_exists($trow["fid"], $parent_tags))
+        	    $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$parent_tags[$trow["fid"]]})");
 
+            $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
             $lastpost = null;
             if($posts->num_rows === 0) continue;
 
@@ -147,7 +144,7 @@
             $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."discussions SET participants_count = ". count($participants) . ", last_post_id = $lastpost, last_post_number = $lastpostnumber WHERE id = {$trow["tid"]}");
         }
     }
-    echo " done: migrated ".$threads->num_rows." threads with their posts";
+    echo "Done: migrated ".$threads->num_rows." threads with their posts";
 
     echo "<p>Migrating custom user groups...<br />";
 
@@ -162,5 +159,5 @@
             if ($result === false) die("Error executing query: ".$flarum_db->error);
         }
     }
-    echo " done: migrated ".$groups->num_rows." custom groups.</p>";
+    echo "Done: migrated ".$groups->num_rows." custom groups.</p>";
 ?>
