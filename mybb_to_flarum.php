@@ -116,9 +116,8 @@
                 if($trow["visible"] == -1) continue;
 
             $participants = array();
-            $comments_count = $trow["replies"]+1;
             $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (id, title, comments_count, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky)
-            VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', {$comments_count}, '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
+            VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', '.($trow["replies"]+1).', '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
 
             if($result === false) die("Error executing query: ".$flarum_db->error);
 
@@ -133,13 +132,14 @@
             $lastpostnumber = 0;
             while($row = $posts->fetch_assoc())
             {
+        	$lastpostnumber++;
+        	
                 if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
                 $content = $flarum_db->real_escape_string($parser->parse($row["message"]));
 
                 $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved, number) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1, $lastpostnumber)");
                 if($result === false)  die("Error executing query: ".$flarum_db->error);
 
-                $lastpostnumber++;
                 $lastpost = (int)$row["pid"];
             }
             $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."discussions SET participants_count = ". count($participants) . ", last_post_id = $lastpost, last_post_number = $lastpostnumber WHERE id = {$trow["tid"]}");
