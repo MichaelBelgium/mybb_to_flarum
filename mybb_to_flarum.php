@@ -116,8 +116,9 @@
                 if($trow["visible"] == -1) continue;
 
             $participants = array();
+            $comments_count = $trow["replies"]+1;
             $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (id, title, comments_count, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky)
-            VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', {$trow["replies"]}, '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
+            VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', {$comments_count}, '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
 
             if($result === false) die("Error executing query: ".$flarum_db->error);
 
@@ -129,7 +130,7 @@
             $lastpost = null;
             if($posts->num_rows === 0) continue;
 
-            $lastpostnumber = 1;
+            $lastpostnumber = 0;
             while($row = $posts->fetch_assoc())
             {
                 if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
