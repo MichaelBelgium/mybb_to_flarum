@@ -116,8 +116,8 @@
                 if($trow["visible"] == -1) continue;
 
             $participants = array();
-            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (id, title, comments_count, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky)
-            VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', '.($trow["replies"]+1).', '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
+            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (id, title, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky)
+            VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
 
             if($result === false) die("Error executing query: ".$flarum_db->error);
 
@@ -125,7 +125,7 @@
             if (array_key_exists($trow["fid"], $parent_tags))
         	    $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$parent_tags[$trow["fid"]]})");
 
-            $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
+            $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]} ORDER BY pid");
             $lastpost = null;
             if($posts->num_rows === 0) continue;
 
@@ -142,7 +142,7 @@
 
                 $lastpost = (int)$row["pid"];
             }
-            $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."discussions SET participants_count = ". count($participants) . ", last_post_id = $lastpost, last_post_number = $lastpostnumber WHERE id = {$trow["tid"]}");
+            $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."discussions SET comments_count = ". $posts->num_rows .", participants_count = ". count($participants) . ", last_post_id = $lastpost, last_post_number = $lastpostnumber WHERE id = {$trow["tid"]}");
         }
     }
     echo "Done: migrated ".$threads->num_rows." threads with their posts";
