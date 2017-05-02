@@ -112,7 +112,7 @@
 
         while($trow = $threads->fetch_assoc())
         {
-            if(Config::$MYBB_SKIP_SOFTDELETED)
+            if(Config::$MYBB_SKIP_TSOFTDELETED)
                 if($trow["visible"] == -1) continue;
 
             $participants = array();
@@ -125,13 +125,15 @@
             if (array_key_exists($trow["fid"], $parent_tags))
         	    $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$parent_tags[$trow["fid"]]})");
 
-            $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
+            $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message, visible FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
             $lastpost = null;
             if($posts->num_rows === 0) continue;
 
             $lastpostnumber = 0;
             while($row = $posts->fetch_assoc())
             {
+                if(Config::$MYBB_SKIP_PSOFTDELETED)
+                    if($row["visible"] == -1 && $row["pid"] != $trow["firstpost"]) continue;
                 if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
                 $lastpostnumber++;
 

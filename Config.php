@@ -1,4 +1,5 @@
 <?php
+use s9e\TextFormatter\Configurator;
 class Config
 {
     public static $MIGRATE_AVATARS = false;                 //enable or disable migration of avatars
@@ -16,7 +17,8 @@ class Config
     public static $MYBB_DB = "";
     public static $MYBB_PREFIX = "mybb_";
 
-    public static $MYBB_SKIP_SOFTDELETED = false;           //if true, the script won't migrate threads in mybb that are soft deleted
+    public static $MYBB_SKIP_TSOFTDELETED = false;          //if true, the script won't migrate threads in mybb that are soft deleted
+    public static $MYBB_SKIP_PSOFTDELETED = false;          //if true, the script  won't migrate posts in mybb that are soft deleted
     public static $MYBB_PATH = "/var/www/html/mybb/";       //absolute path of mybb installation (Only used if $MIGRATE_AVATARS = true)
 }
 
@@ -46,8 +48,7 @@ function to_slug($text, $check_exist = false)
     return strtolower($text);
 }
 
-$configurator = new s9e\TextFormatter\Configurator;
-
+$configurator = new Configurator;
 $configurator->rootRules->createParagraphs(true);
 $configurator->BBCodes->addFromRepository('B');
 $configurator->BBCodes->addFromRepository('I');
@@ -65,7 +66,6 @@ $configurator->BBCodes->addFromRepository('*');
 $configurator->BBCodes->addFromRepository('FONT');
 $configurator->BBCodes->addFromRepository('ALIGN');
 $configurator->BBCodes->addFromRepository('HR');
-
 extract($configurator->finalize());
 
 ?>
