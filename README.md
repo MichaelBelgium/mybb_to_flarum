@@ -10,6 +10,7 @@ This is a PHP migration script to migrate most data from a mybb forum to a fresh
 * Posts
 * Groups
 * Avatars (if specified)
+* Private messages (if required extension is installed - see to do)
 
 ## Instructions
 **This script has been tested with: MyBB v1.8.11 and Flarum v0.1.0-beta.6**
@@ -22,8 +23,9 @@ This is because Flarum uses <a href='https://github.com/s9e/TextFormatter'>the s
 At last but not least browse to `www.mywebsite.com/myflarumforum/mybb_to_flarum.php` and let it do its job.
 
 Note: If u specify u want to migrate avatars then your (old) <u>MyBB forum is required also.</u>
+Note: To be able to migrate private messages you need the extension [flagrow/byobu](https://github.com/flagrow/byobu)
 
 ## To do
 * forums with a redirect hyperlink are skipped. Flarum doesn't support them (yet).
-* Eventually add private messages as private discussions or some kind
+* Private messages: there can be flaws, partipants_count needs to be added
 * Try to assign user ip's to posts

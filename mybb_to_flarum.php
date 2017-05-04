@@ -15,6 +15,10 @@
     $mybb_db->query("SET CHARSET 'utf8';");
     $flarum_db->query("SET CHARSET 'utf8';");
     $parent_tags = array();
+    $extension_installed = false;
+
+    $result = $flarum_db->query("SELECT 1 FROM ".Config::$FLARUM_PREFIX."recipients");
+    if($result === true) $extension_installed = true;
 
     echo "<p>Migrating users ...<br />";
 
@@ -106,6 +110,11 @@
     $threads = $mybb_db->query("SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM ".Config::$MYBB_PREFIX."threads");
     if($threads->num_rows > 0)
     {
+        if($extension_installed)
+        {
+            $flarum_db->query("SET FOREIGN_KEY_CHECKS = 0");
+            $flarum_db->query("TRUNCATE TABLE " . Config::$FLARUM_PREFIX . "recipients");
+        }
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."discussions");
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."discussions_tags");
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."posts");
@@ -162,4 +171,50 @@
         }
     }
     echo "Done: migrated ".$groups->num_rows." custom groups.</p>";
+
+    if(!$extension_installed) exit;
+
+    $pms = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."privatemessages WHERE folder = 2 AND subject NOT LIKE 'RE: %' AND subject NOT LIKE '%buddy request%' ORDER BY dateline ASC");
+    if($pms->num_rows > 0)
+    {
+        while($row = $pms->fetch_assoc())
+        {
+            $sender = (int)$row["fromid"];
+            $receiver = (int)$row["toid"];
+            $time = "FROM_UNIXTIME('{$row["dateline"]}')";
+            $lastpostnumber = 1;
+            $title = $flarum_db->real_escape_string($row["subject"]);
+
+            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (title, start_time, start_user_id, slug) VALUES ('$title', $time, $sender, '".to_slug($row["subject"], true)."')");
+            if($result === false) die("Error executing query: ".$flarum_db->error);
+            $dID = $flarum_db->insert_id;
+
+            $content = $flarum_db->real_escape_string($parser->parse($row["message"]));
+            $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (discussion_id, time, user_id, type, content, is_approved, number) VALUES ($dID, $time, $sender, 'comment', '$content', 1, $lastpostnumber)");
+            $startpID = $flarum_db->insert_id;
+
+            $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."recipients (discussion_id, user_id, created_at, updated_at) VALUES ($dID, $sender, $time, $time)");
+            $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."recipients (discussion_id, user_id, created_at, updated_at) VALUES ($dID, $receiver, $time, $time)");
+
+            $pmposts = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."privatemessages WHERE folder = 2 AND subject = 'RE: $title' ORDER BY dateline ASC ");
+
+            if($pmposts->num_rows > 0)
+            {
+                while($prow = $pmposts->fetch_assoc())
+                {
+                    $lastpostnumber++;
+                    $content = $flarum_db->real_escape_string($parser->parse($prow["message"]));
+                    $ptime = "FROM_UNIXTIME('{$prow["dateline"]}')";
+                    $lastID = (int)$prow["fromid"];
+
+                    $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (discussion_id, time, user_id, type, content, is_approved, number) VALUES ($dID, $ptime, $lastID, 'comment', '$content', 1, $lastpostnumber)");
+                    if($result === false)  die("Error executing query: ".$flarum_db->error);
+                    $lastpID = $flarum_db->insert_id;
+                }
+            }
+
+            $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."discussions SET start_post_id = $startpID, last_time = $ptime, last_user_id = $lastID, last_post_number = $lastpostnumber, last_post_id = $lastpID, comments_count = $lastpostnumber WHERE id = $dID");
+        }
+    }
+
 ?>
