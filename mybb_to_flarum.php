@@ -185,7 +185,7 @@
             $lastpostnumber = 1;
             $title = $flarum_db->real_escape_string($row["subject"]);
 
-            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (title, start_time, start_user_id, slug) VALUES ('$title', $time, $sender, '".to_slug($row["subject"], true)."')");
+            $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions (title, participants_count, start_time, start_user_id, slug) VALUES ('$title', 2, $time, $sender, '".to_slug($row["subject"], true)."')");
             if($result === false) die("Error executing query: ".$flarum_db->error);
             $dID = $flarum_db->insert_id;
 
@@ -196,7 +196,7 @@
             $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."recipients (discussion_id, user_id, created_at, updated_at) VALUES ($dID, $sender, $time, $time)");
             $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."recipients (discussion_id, user_id, created_at, updated_at) VALUES ($dID, $receiver, $time, $time)");
 
-            $pmposts = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."privatemessages WHERE folder = 2 AND subject = 'RE: $title' ORDER BY dateline ASC ");
+            $pmposts = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."privatemessages WHERE folder = 2 AND subject = 'RE: $title' AND (fromid = $sender OR fromid = $receiver) ORDER BY dateline ASC ");
 
             if($pmposts->num_rows > 0)
             {
