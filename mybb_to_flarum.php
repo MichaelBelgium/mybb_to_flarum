@@ -12,13 +12,13 @@
     if($mybb_db->connect_errno)
         die("MyBB db connection failed: ". $mybb_db->connect_error);
     
-    $mybb_db->query("SET CHARSET 'utf8';");
-    $flarum_db->query("SET CHARSET 'utf8';");
+    $mybb_db->query("SET CHARSET 'utf8'");
+    $flarum_db->query("SET CHARSET 'utf8'");
     $parent_tags = array();
     $extension_installed = false;
 
-    $result = $flarum_db->query("SELECT 1 FROM ".Config::$FLARUM_PREFIX."recipients");
-    if($result === true) $extension_installed = true;
+    $result = $flarum_db->query("SELECT 1 FROM ".Config::$FLARUM_PREFIX."recipients LIMIT 1");
+    if($result !== false) $extension_installed = true;
 
     echo "<p>Migrating users ...<br />";
 
@@ -174,6 +174,8 @@
 
     if(!$extension_installed) exit;
 
+    echo "<p>Migrating private messages...<br />";
+
     $pms = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."privatemessages WHERE folder = 2 AND subject NOT LIKE 'RE: %' AND subject NOT LIKE '%buddy request%' ORDER BY dateline ASC");
     if($pms->num_rows > 0)
     {
@@ -216,5 +218,7 @@
             $flarum_db->query("UPDATE ".Config::$FLARUM_PREFIX."discussions SET start_post_id = $startpID, last_time = $ptime, last_user_id = $lastID, last_post_number = $lastpostnumber, last_post_id = $lastpID, comments_count = $lastpostnumber WHERE id = $dID");
         }
     }
+
+    echo "Done: migrated ".$pms->num_rows." private messages</p>";
 
 ?>
