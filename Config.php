@@ -1,5 +1,6 @@
 <?php
 use s9e\TextFormatter\Configurator;
+
 class Config
 {
     public static $MIGRATE_AVATARS = false;                 //enable or disable migration of avatars
@@ -9,7 +10,9 @@ class Config
     public static $FLARUM_PASSWORD = "";
     public static $FLARUM_DB = "";
     public static $FLARUM_PREFIX = "flar_";
-    public static $FLARUM_AVATAR_PATH = "assets/avatars/";  //relative path from the script, normally not needed to edit this. (Only used if $MIGRATE_AVATARS = true)
+
+    public static $FLARUM_AVATAR_PATH = "assets/avatars/";  //relative path from the script, normally not needed to edit this. (Only used if $MIGRATE_AVATARS = true
+    public static $FLARUM_PM_TAG = "Private Discussions";   //name of the tag for private messages/discussions
 
     public static $MYBB_SERVER = "127.0.0.1";
     public static $MYBB_USER = "";

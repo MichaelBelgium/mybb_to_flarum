@@ -179,6 +179,18 @@
     $pms = $mybb_db->query("SELECT * FROM ".Config::$MYBB_PREFIX."privatemessages WHERE folder = 2 AND subject NOT LIKE 'RE: %' AND subject NOT LIKE '%buddy request%' ORDER BY dateline ASC");
     if($pms->num_rows > 0)
     {
+        $tag_id = null;
+        $checktag = $flarum_db->query("SELECT id FROM ".Config::$FLARUM_PREFIX."tags WHERE name = '". Config::$FLARUM_PM_TAG."'");
+        if($checktag === false) die("Error executing query: ".$flarum_db->error);
+
+        if($checktag->num_rows === 1)
+            $tag_id = (int)$checktag->fetch_row()[0];
+        else
+        {
+            $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."tags (name, slug, description, color) VALUES ('".Config::$FLARUM_PM_TAG."', '".to_slug(Config::$FLARUM_PM_TAG)."', 'Private discussions are listed here', '".rand_color()."')");
+            $tag_id = $flarum_db->insert_id;
+        }
+
         while($row = $pms->fetch_assoc())
         {
             $sender = (int)$row["fromid"];
@@ -194,6 +206,8 @@
             $content = $flarum_db->real_escape_string($parser->parse($row["message"]));
             $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (discussion_id, time, user_id, type, content, is_approved, number) VALUES ($dID, $time, $sender, 'comment', '$content', 1, $lastpostnumber)");
             $startpID = $flarum_db->insert_id;
+
+            $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ($dID, $tag_id)");
 
             $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."recipients (discussion_id, user_id, created_at, updated_at) VALUES ($dID, $sender, $time, $time)");
             $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."recipients (discussion_id, user_id, created_at, updated_at) VALUES ($dID, $receiver, $time, $time)");
