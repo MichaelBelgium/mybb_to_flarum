@@ -19,11 +19,20 @@ To get this to work u only need your (old) mybb database and a (recommended: fre
 Afterwards you need to edit the `Config.php` file so it can connect.
 
 When this is done, you only need to upload these files to the <u>root of your Flarum installation</u>.
-This is because Flarum uses <a href='https://github.com/s9e/TextFormatter'>the s9e TextFormatter</a> and the script uses it too to parse and save the content of the mybb posts.
+This is because Flarum uses [the s9e TextFormatter](https://github.com/s9e/TextFormatter) and the script uses it too to parse and save the content of the mybb posts.
 At last but not least browse to `www.mywebsite.com/myflarumforum/mybb_to_flarum.php` and let it do its job.
 
-Note: If u specify u want to migrate avatars then your (old) <u>MyBB forum is required also.</u>
-Note: To be able to migrate private messages you need the extension [flagrow/byobu](https://github.com/flagrow/byobu)
+## Important notes
+* If u specify u want to migrate avatars then your (old) <u>MyBB forum is required also.</u>
+* To be able to migrate private messages you need the extension [flagrow/byobu](https://github.com/flagrow/byobu)
+* To get the SIZE-tag to work you'll need to edit the Flarum BBcode extension **FIRST** (before running the script) by replacing a line (see below) in `vendor/flarum/flarum-ext-bbcode/src/Listener/FormatBBCode.php` and then **re-enabling** the BBcode extension in administration panel
+
+```PHP
+//Replace:
+$event->configurator->BBCodes->addFromRepository('SIZE');
+//With:
+$event->configurator->BBCodes->addCustom('[size={CHOICE=large,small,xx-small,x-small,medium,x-large,xx-large}]{TEXT}[/size]','<span style="font-size:{CHOICE}">{TEXT}</span>');
+```
 
 ## To do
 * forums with a redirect hyperlink are skipped. Flarum doesn't support them (yet).

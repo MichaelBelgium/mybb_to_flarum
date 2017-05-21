@@ -69,6 +69,8 @@ $configurator->BBCodes->addFromRepository('*');
 $configurator->BBCodes->addFromRepository('FONT');
 $configurator->BBCodes->addFromRepository('ALIGN');
 $configurator->BBCodes->addFromRepository('HR');
+$configurator->BBCodes->addCustom('[size={CHOICE=large,small,xx-small,x-small,medium,x-large,xx-large}]{TEXT}[/size]','<span style="font-size:{CHOICE}">{TEXT}</span>');
+
 extract($configurator->finalize());
 
 ?>
