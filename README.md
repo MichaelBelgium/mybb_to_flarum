@@ -34,6 +34,4 @@ $event->configurator->BBCodes->addFromRepository('SIZE');
 $event->configurator->BBCodes->addCustom('[size={CHOICE=large,small,xx-small,x-small,medium,x-large,xx-large}]{TEXT}[/size]','<span style="font-size:{CHOICE}">{TEXT}</span>');
 ```
 
-## To do
 * forums with a redirect hyperlink are skipped. Flarum doesn't support them (yet).
-* Try to assign user ip's to posts

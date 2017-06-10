@@ -5,24 +5,26 @@
     set_time_limit(0);
 
     $flarum_db = new mysqli(Config::$FLARUM_SERVER, Config::$FLARUM_USER, Config::$FLARUM_PASSWORD, Config::$FLARUM_DB);
-    if($flarum_db->connect_errno)
-        die("Flarum db connection failed: ". $flarum_db->connect_error);
+    if($flarum_db->connect_errno)   die("Flarum db connection failed: ". $flarum_db->connect_error);
 
     $mybb_db = new mysqli(Config::$MYBB_SERVER, Config::$MYBB_USER, Config::$MYBB_PASSWORD, Config::$MYBB_DB);
-    if($mybb_db->connect_errno)
-        die("MyBB db connection failed: ". $mybb_db->connect_error);
+    if($mybb_db->connect_errno)     die("MyBB db connection failed: ". $mybb_db->connect_error);
     
     $mybb_db->query("SET CHARSET 'utf8'");
     $flarum_db->query("SET CHARSET 'utf8'");
+
     $parent_tags = array();
+    $user_ips = array();
     $extension_installed = false;
 
     $result = $flarum_db->query("SELECT 1 FROM ".Config::$FLARUM_PREFIX."recipients LIMIT 1");
     if($result !== false) $extension_installed = true;
 
+    if($extension_installed) $flarum_db->query("SET FOREIGN_KEY_CHECKS = 0");
+
     echo "<p>Migrating users ...<br />";
 
-    $users = $mybb_db->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar FROM ".Config::$MYBB_PREFIX."users ");
+    $users = $mybb_db->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM ".Config::$MYBB_PREFIX."users ");
     if($users->num_rows > 0)
     {
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."users");
@@ -35,6 +37,7 @@
 
             $usergroup = (int)$row["usergroup"];
             $othergroups = explode(",", $row["additionalgroups"]);
+            $user_ips[(int)$row["uid"]] = inet_ntop($row["lastip"]);
 
             if($usergroup > 7)
                 $flarum_db->query( "INSERT INTO ".Config::$FLARUM_PREFIX."users_groups (user_id, group_id) VALUES ({$row["uid"]}, {$usergroup})");
@@ -110,11 +113,8 @@
     $threads = $mybb_db->query("SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM ".Config::$MYBB_PREFIX."threads");
     if($threads->num_rows > 0)
     {
-        if($extension_installed)
-        {
-            $flarum_db->query("SET FOREIGN_KEY_CHECKS = 0");
-            $flarum_db->query("TRUNCATE TABLE " . Config::$FLARUM_PREFIX . "recipients");
-        }
+        if($extension_installed)    $flarum_db->query("TRUNCATE TABLE ". Config::$FLARUM_PREFIX ."recipients");
+        
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."discussions");
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."discussions_tags");
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."posts");
@@ -132,7 +132,7 @@
 
             $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$trow["fid"]})");
             if (array_key_exists($trow["fid"], $parent_tags))
-        	    $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$parent_tags[$trow["fid"]]})");
+                $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$parent_tags[$trow["fid"]]})");
 
             $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message, visible FROM ".Config::$MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
             $lastpost = null;
@@ -147,7 +147,7 @@
                 $lastpostnumber++;
 
                 $content = $flarum_db->real_escape_string($parser->parse($row["message"]));
-                $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved, number) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1, $lastpostnumber)");
+                $result = $flarum_db->query("INSERT INTO ".Config::$FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved, number, ip_address) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1, $lastpostnumber, '".$user_ips[(int)$row["uid"]]."')");
                 if($result === false)  die("Error executing query: ".$flarum_db->error);
 
                 $lastpost = (int)$row["pid"];
