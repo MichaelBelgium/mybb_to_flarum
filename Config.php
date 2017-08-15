@@ -3,26 +3,26 @@ use s9e\TextFormatter\Configurator;
 
 class Config
 {
-    public static $MIGRATE_AVATARS = false;                 //enable or disable migration of avatars
+    const MIGRATE_AVATARS = false;                  //enable or disable migration of avatars
 
-    public static $FLARUM_SERVER = "127.0.0.1";
-    public static $FLARUM_USER = "";
-    public static $FLARUM_PASSWORD = "";
-    public static $FLARUM_DB = "";
-    public static $FLARUM_PREFIX = "flar_";
+    const FLARUM_SERVER = "127.0.0.1";
+    const FLARUM_USER = "";
+    const FLARUM_PASSWORD = "";
+    const FLARUM_DB = "";
+    const FLARUM_PREFIX = "flar_";
 
-    public static $FLARUM_AVATAR_PATH = "assets/avatars/";  //relative path from the script, normally not needed to edit this. (Only used if $MIGRATE_AVATARS = true
-    public static $FLARUM_PM_TAG = "Private Discussions";   //name of the tag for private messages/discussions
+    const FLARUM_AVATAR_PATH = "assets/avatars/";   //relative path from the script, normally not needed to edit this. (Only used if $MIGRATE_AVATARS = true
+    const FLARUM_PM_TAG = "Private Discussions";    //name of the tag for private messages/discussions
 
-    public static $MYBB_SERVER = "127.0.0.1";
-    public static $MYBB_USER = "";
-    public static $MYBB_PASSWORD  = "";
-    public static $MYBB_DB = "";
-    public static $MYBB_PREFIX = "mybb_";
+    const MYBB_SERVER = "127.0.0.1";
+    const MYBB_USER = "";
+    const MYBB_PASSWORD  = "";
+    const MYBB_DB = "";
+    const MYBB_PREFIX = "mybb_";
 
-    public static $MYBB_SKIP_TSOFTDELETED = true;           //if true, the script won't migrate threads in mybb that are soft deleted
-    public static $MYBB_SKIP_PSOFTDELETED = true;          //if true, the script  won't migrate posts in mybb that are soft deleted
-    public static $MYBB_PATH = "/var/www/html/mybb/";       //absolute path of mybb installation (Only used if $MIGRATE_AVATARS = true)
+    const MYBB_SKIP_TSOFTDELETED = true;            //if true, the script won't migrate threads in mybb that are soft deleted
+    const MYBB_SKIP_PSOFTDELETED = true;            //if true, the script  won't migrate posts in mybb that are soft deleted
+    const MYBB_PATH = "/var/www/html/mybb/";        //absolute path of mybb installation (Only used if $MIGRATE_AVATARS = true)
 }
 
 function rand_color()
@@ -40,10 +40,10 @@ function to_slug($text, $check_exist = false)
 
     if($check_exist)
     {
-        $result = $flarum_db->query("SELECT slug FROM ".Config::$FLARUM_PREFIX."tags WHERE slug = '$text'");
+        $result = $flarum_db->query("SELECT slug FROM ".Config::FLARUM_PREFIX."tags WHERE slug = '$text'");
         if($result->num_rows > 0)
         {
-           $result = $flarum_db->query("SELECT slug FROM ".Config::$FLARUM_PREFIX."tags WHERE SLUG LIKE '$text%'");
+           $result = $flarum_db->query("SELECT slug FROM ".Config::FLARUM_PREFIX."tags WHERE SLUG LIKE '$text%'");
            $text .= $result->num_rows;
         }
     }
