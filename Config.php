@@ -20,8 +20,8 @@ class Config
     public static $MYBB_DB = "";
     public static $MYBB_PREFIX = "mybb_";
 
-    public static $MYBB_SKIP_TSOFTDELETED = false;          //if true, the script won't migrate threads in mybb that are soft deleted
-    public static $MYBB_SKIP_PSOFTDELETED = false;          //if true, the script  won't migrate posts in mybb that are soft deleted
+    public static $MYBB_SKIP_TSOFTDELETED = true;           //if true, the script won't migrate threads in mybb that are soft deleted
+    public static $MYBB_SKIP_PSOFTDELETED = true;          //if true, the script  won't migrate posts in mybb that are soft deleted
     public static $MYBB_PATH = "/var/www/html/mybb/";       //absolute path of mybb installation (Only used if $MIGRATE_AVATARS = true)
 }
 

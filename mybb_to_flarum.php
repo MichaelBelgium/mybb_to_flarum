@@ -20,7 +20,11 @@
     $result = $flarum_db->query("SELECT 1 FROM ".Config::$FLARUM_PREFIX."recipients LIMIT 1");
     if($result !== false) $extension_installed = true;
 
-    if($extension_installed) $flarum_db->query("SET FOREIGN_KEY_CHECKS = 0");
+    if($extension_installed) 
+    {
+        $flarum_db->query("SET FOREIGN_KEY_CHECKS = 0");
+        $flarum_db->query("TRUNCATE TABLE ". Config::$FLARUM_PREFIX ."recipients");
+    }
 
     echo "<p>Migrating users ...<br />";
 
@@ -112,9 +116,7 @@
 
     $threads = $mybb_db->query("SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM ".Config::$MYBB_PREFIX."threads");
     if($threads->num_rows > 0)
-    {
-        if($extension_installed)    $flarum_db->query("TRUNCATE TABLE ". Config::$FLARUM_PREFIX ."recipients");
-        
+    {    
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."discussions");
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."discussions_tags");
         $flarum_db->query("TRUNCATE TABLE ".Config::$FLARUM_PREFIX."posts");
