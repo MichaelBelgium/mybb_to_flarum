@@ -16,7 +16,7 @@ This is a PHP migration script to migrate most data from a mybb forum to a fresh
 **This script has been tested with: MyBB v1.8.12 and Flarum v0.1.0-beta.7**
 
 To get this to work u only need your (old) mybb database and a (recommended: fresh - altho it truncates everything) installed flarum forum.
-Afterwards you need to edit the `Config.php` file so it can connect.
+Afterwards you need to edit the `migration_config.php` file so it can connect.
 
 When this is done, you only need to upload these files to the <u>root of your Flarum installation</u>.
 This is because Flarum uses [the s9e TextFormatter](https://github.com/s9e/TextFormatter) and the script uses it too to parse and save the content of the mybb posts.

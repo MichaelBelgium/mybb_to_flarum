@@ -11,7 +11,7 @@ class Config
     const FLARUM_DB = "";
     const FLARUM_PREFIX = "flar_";
 
-    const FLARUM_AVATAR_PATH = "assets/avatars/";   //relative path from the script, normally not needed to edit this. (Only used if $MIGRATE_AVATARS = true
+    const FLARUM_AVATAR_PATH = "assets/avatars/";   //relative path from the script, normally not needed to edit this. (Only used if $MIGRATE_AVATARS = true)
     const FLARUM_PM_TAG = "Private Discussions";    //name of the tag for private messages/discussions
 
     const MYBB_SERVER = "127.0.0.1";
