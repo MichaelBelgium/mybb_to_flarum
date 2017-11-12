@@ -1,5 +1,6 @@
 <?php
 use s9e\TextFormatter\Configurator;
+use Flarum\Util\Str;
 
 class Config
 {
@@ -34,21 +35,19 @@ function to_slug($text, $check_exist = false)
 {
     global $flarum_db;
 
-    $text = preg_replace("/[^\w]/u", "-", $text);
-    $text = preg_replace("/\-+/u","-", $text);
-    $text = trim($text, "-");
+    $text = Str::slug($text);
 
     if($check_exist)
     {
         $result = $flarum_db->query("SELECT slug FROM ".Config::FLARUM_PREFIX."tags WHERE slug = '$text'");
         if($result->num_rows > 0)
         {
-           $result = $flarum_db->query("SELECT slug FROM ".Config::FLARUM_PREFIX."tags WHERE SLUG LIKE '$text%'");
+           $result = $flarum_db->query("SELECT slug FROM ".Config::FLARUM_PREFIX."tags WHERE slug LIKE '$text%'");
            $text .= $result->num_rows;
         }
     }
 
-    return strtolower($text);
+    return $text;
 }
 
 $configurator = new Configurator;

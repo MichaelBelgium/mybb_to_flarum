@@ -20,7 +20,7 @@
     $result = $flarum_db->query("SELECT 1 FROM ".Config::FLARUM_PREFIX."recipients LIMIT 1");
     if($result !== false) $extension_installed = true;
 
-    if($extension_installed) 
+    if($extension_installed)
     {
         $flarum_db->query("SET FOREIGN_KEY_CHECKS = 0");
         $flarum_db->query("TRUNCATE TABLE ". Config::FLARUM_PREFIX ."recipients");
@@ -28,16 +28,17 @@
 
     echo "<p>Migrating users ...<br />";
 
-    $users = $mybb_db->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM ".Config::MYBB_PREFIX."users ");
+    $users = $mybb_db->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM ".Config::MYBB_PREFIX."users");
     if($users->num_rows > 0)
     {
         $flarum_db->query("TRUNCATE TABLE ".Config::FLARUM_PREFIX."users");
+        $flarum_db->query("TRUNCATE TABLE ".Config::FLARUM_PREFIX."users_groups");
 
         while($row = $users->fetch_assoc())
         {
             $password = password_hash(time(),PASSWORD_BCRYPT );
-            $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."users (id, username, email, is_activated, password, join_time, last_seen_time, discussions_count, comments_count) VALUES ({$row["uid"]},'{$row["username"]}', '{$row["email"]}', 1, '$password', '{$row["regdate"]}', '{$row["lastvisit"]}', {$row["threadnum"]}, {$row["postnum"]})");
-            if($result === false) die("Error executing query: ". $flarum_db->error);
+            $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."users (id, username, email, is_activated, password, join_time, last_seen_time, discussions_count, comments_count) VALUES ({$row["uid"]},'{$flarum_db->escape_string($row["username"])}', '{$row["email"]}', 1, '$password', '{$row["regdate"]}', '{$row["lastvisit"]}', {$row["threadnum"]}, {$row["postnum"]})");
+            if($result === false) die("Error executing query (at uid {$row["uid"]}, saving as flarum user): ". $flarum_db->error);
 
             $usergroup = (int)$row["usergroup"];
             $othergroups = explode(",", $row["additionalgroups"]);
@@ -81,8 +82,8 @@
         while($crow = $categories->fetch_assoc())
         {
             $color = rand_color();
-            $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."tags (id, name, slug, description, color, position) VALUES ({$crow["fid"]},'{$crow["name"]}', '".to_slug($crow["name"])."', '{$crow["description"]}',  '$color', $c_pos)");
-            if($result === false) die("Error executing query: ".$flarum_db->error);
+            $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."tags (id, name, slug, description, color, position) VALUES ({$crow["fid"]},'{$flarum_db->escape_string($crow["name"])}', '".to_slug($crow["name"])."', '{$flarum_db->escape_string($crow["description"])}',  '$color', $c_pos)");
+            if($result === false) die("Error executing query (at fid {$crow["fid"]}, saving category as tag): ".$flarum_db->error);
             $parent_tags[$crow["fid"]] = 0;
 
             //forums
@@ -94,18 +95,23 @@
             {
                 if(!empty($srow["linkto"])) continue;
 
-                $result = $flarum_db->query("INSERT INTO " . Config::FLARUM_PREFIX . "tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$srow["name"]}', '" . to_slug($srow["name"], true) . "', '{$flarum_db->real_escape_string($srow["description"])}', {$crow["fid"]}, '$color', $f_pos)");
-                if($result === false) die("Error executing query: ".$flarum_db->error."(".$flarum_db->errno.")");
+                $result = $flarum_db->query("INSERT INTO " . Config::FLARUM_PREFIX . "tags (id, name, slug, description, parent_id, color, position) VALUES ({$srow["fid"]},'{$flarum_db->escape_string($srow["name"])}', '" . to_slug($srow["name"], true) . "', '{$flarum_db->escape_string($srow["description"])}', {$crow["fid"]}, '$color', $f_pos)");
+                if($result === false) die("Error executing query (at fid {$srow["fid"]}, saving forum as tag): ".$flarum_db->error."(".$flarum_db->errno.")");
                 $parent_tags[$srow["fid"]] = $crow["fid"];
 
                 $f_pos++;
 
                 //subforums as secundary tags
-                $subforums = $mybb_db->query("SELECT * FROM " . Config::MYBB_PREFIX . "forums WHERE type = 'f' AND pid = {$srow["fid"]}");
+                $subforums = $mybb_db->query("SELECT fid, name, description, linkto FROM " . Config::MYBB_PREFIX . "forums WHERE type = 'f' AND pid = {$srow["fid"]}");
                 if ($subforums->num_rows === 0) continue;
 
                 while ($subrow = $subforums->fetch_assoc())
-                    $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."tags (id, name, slug, description, color, is_hidden) VALUES ({$subrow["fid"]}, '{$subrow["name"]}', '".to_slug($subrow["name"], true)."', '{$subrow["description"]}', '$color', 1)");
+                {
+                    if(!empty($subrow["linkto"])) continue;
+
+                    $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."tags (id, name, slug, description, parent_id, color, is_hidden) VALUES ({$subrow["fid"]}, '{$flarum_db->escape_string($subrow["name"])}', '".to_slug($subrow["name"], true)."', '{$flarum_db->escape_string($subrow["description"])}', {$srow["fid"]} ,'$color', 1)");
+                    if($result === false) die("Error executing query (at fid {$subrow["fid"]}, saving subforum as tag): ".$flarum_db->error."(".$flarum_db->errno.")");
+                }
             }
             $c_pos++;
         }
@@ -123,14 +129,13 @@
 
         while($trow = $threads->fetch_assoc())
         {
-            if(Config::MYBB_SKIP_TSOFTDELETED)
-                if($trow["visible"] == -1) continue;
+            if(Config::MYBB_SKIP_TSOFTDELETED && $trow["visible"] == -1) continue;
 
             $participants = array();
             $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions (id, title, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky)
-            VALUES ({$trow["tid"]}, '{$flarum_db->real_escape_string($trow["subject"])}', '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".(empty($trow["closed"]) ? "0" : $trow["closed"]).", {$trow["sticky"]})");
+            VALUES ({$trow["tid"]}, '{$flarum_db->escape_string($trow["subject"])}', '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".($trow["closed"] == "1" ? "1" : "0").", {$trow["sticky"]})");
 
-            if($result === false) die("Error executing query: ".$flarum_db->error);
+            if($result === false) die("Error executing query (at tid {$trow["tid"]}, saving thread as discussion): ".$flarum_db->error);
 
             $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$trow["fid"]})");
             if (array_key_exists($trow["fid"], $parent_tags))
@@ -148,9 +153,9 @@
                 if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
                 $lastpostnumber++;
 
-                $content = $flarum_db->real_escape_string($parser->parse($row["message"]));
+                $content = substr($flarum_db->escape_string($parser->parse($row["message"])), 0, 65535);
                 $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved, number, ip_address) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1, $lastpostnumber, '".$user_ips[(int)$row["uid"]]."')");
-                if($result === false)  die("Error executing query: ".$flarum_db->error);
+                if($result === false)  die("Error executing query (at pid {$row["pid"]}, saving as post): ".$flarum_db->error);
 
                 $lastpost = (int)$row["pid"];
             }
@@ -159,7 +164,7 @@
     }
     echo "Done: migrated ".$threads->num_rows." threads with their posts";
 
-    echo "<p>Migrating custom user groups...<br />";
+    echo "<p>Migrating custom usergroups...<br />";
 
     $groups = $mybb_db->query("SELECT * FROM ".Config::MYBB_PREFIX."usergroups WHERE type = 2");
     if($groups->num_rows > 0)
@@ -169,7 +174,7 @@
         while ($row = $groups->fetch_assoc())
         {
             $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."groups (id, name_singular, name_plural, color) VALUES ({$row["gid"]}, '{$row["title"]}', '{$row["title"]}', '".rand_color()."')");
-            if ($result === false) die("Error executing query: ".$flarum_db->error);
+            if ($result === false) die("Error executing query (at gid {$row["gid"]}, saving usergroup as group): ".$flarum_db->error);
         }
     }
     echo "Done: migrated ".$groups->num_rows." custom groups.</p>";
@@ -183,7 +188,6 @@
     {
         $tag_id = null;
         $checktag = $flarum_db->query("SELECT id FROM ".Config::FLARUM_PREFIX."tags WHERE name = '". Config::FLARUM_PM_TAG."'");
-        if($checktag === false) die("Error executing query: ".$flarum_db->error);
 
         if($checktag->num_rows === 1)
             $tag_id = (int)$checktag->fetch_row()[0];
@@ -199,13 +203,13 @@
             $receiver = (int)$row["toid"];
             $time = "FROM_UNIXTIME('{$row["dateline"]}')";
             $lastpostnumber = 1;
-            $title = $flarum_db->real_escape_string($row["subject"]);
+            $title = $flarum_db->escape_string($row["subject"]);
 
             $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions (title, participants_count, start_time, start_user_id, slug) VALUES ('$title', 2, $time, $sender, '".to_slug($row["subject"], true)."')");
-            if($result === false) die("Error executing query: ".$flarum_db->error);
+            if($result === false) die("Error executing query (at pmid {$row["pmid"]}, saving as private message discussion): ".$flarum_db->error);
             $dID = $flarum_db->insert_id;
 
-            $content = $flarum_db->real_escape_string($parser->parse($row["message"]));
+            $content = $flarum_db->escape_string($parser->parse($row["message"]));
             $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."posts (discussion_id, time, user_id, type, content, is_approved, number) VALUES ($dID, $time, $sender, 'comment', '$content', 1, $lastpostnumber)");
             $startpID = $flarum_db->insert_id;
 
@@ -221,12 +225,12 @@
                 while($prow = $pmposts->fetch_assoc())
                 {
                     $lastpostnumber++;
-                    $content = $flarum_db->real_escape_string($parser->parse($prow["message"]));
+                    $content = $flarum_db->escape_string($parser->parse($prow["message"]));
                     $ptime = "FROM_UNIXTIME('{$prow["dateline"]}')";
                     $lastID = (int)$prow["fromid"];
 
                     $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."posts (discussion_id, time, user_id, type, content, is_approved, number) VALUES ($dID, $ptime, $lastID, 'comment', '$content', 1, $lastpostnumber)");
-                    if($result === false)  die("Error executing query: ".$flarum_db->error);
+                    if($result === false)  die("Error executing query (at pmid {$prow["pmid"]}, saving private message repies as posts): ".$flarum_db->error);
                     $lastpID = $flarum_db->insert_id;
                 }
             }
