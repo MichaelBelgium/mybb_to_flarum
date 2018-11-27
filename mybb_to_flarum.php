@@ -32,12 +32,12 @@
     if($users->num_rows > 0)
     {
         $flarum_db->query("TRUNCATE TABLE ".Config::FLARUM_PREFIX."users");
-        $flarum_db->query("TRUNCATE TABLE ".Config::FLARUM_PREFIX."users_groups");
+        $flarum_db->query("TRUNCATE TABLE ".Config::FLARUM_PREFIX."group_user");
 
         while($row = $users->fetch_assoc())
         {
             $password = password_hash(time(),PASSWORD_BCRYPT );
-            $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."users (id, username, email, is_activated, password, join_time, last_seen_time, discussions_count, comments_count) VALUES ({$row["uid"]},'{$flarum_db->escape_string($row["username"])}', '{$row["email"]}', 1, '$password', '{$row["regdate"]}', '{$row["lastvisit"]}', {$row["threadnum"]}, {$row["postnum"]})");
+            $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."users (id, username, email, is_email_confirmed, password, joined_at, last_seen_at, discussion_count, comment_count) VALUES ({$row["uid"]},'{$flarum_db->escape_string($row["username"])}', '{$row["email"]}', 1, '$password', '{$row["regdate"]}', '{$row["lastvisit"]}', {$row["threadnum"]}, {$row["postnum"]})");
             if($result === false) die("Error executing query (at uid {$row["uid"]}, saving as flarum user): ". $flarum_db->error);
 
             $usergroup = (int)$row["usergroup"];
@@ -45,12 +45,12 @@
             $user_ips[(int)$row["uid"]] = inet_ntop($row["lastip"]);
 
             if($usergroup > 7)
-                $flarum_db->query( "INSERT INTO ".Config::FLARUM_PREFIX."users_groups (user_id, group_id) VALUES ({$row["uid"]}, {$usergroup})");
+                $flarum_db->query( "INSERT INTO ".Config::FLARUM_PREFIX."group_user (user_id, group_id) VALUES ({$row["uid"]}, {$usergroup})");
 
             foreach($othergroups as $group)
             {
                 if((int)$group <= 7) continue;
-                $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."users_groups (user_id, group_id) VALUES ({$row["uid"]}, $group)");
+                $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."group_user (user_id, group_id) VALUES ({$row["uid"]}, $group)");
             }
 
             if(Config::MIGRATE_AVATARS)
@@ -61,7 +61,7 @@
                     if(file_exists(Config::MYBB_PATH.$row["avatar"]))
                     {
                         if(copy(Config::MYBB_PATH.$row["avatar"],Config::FLARUM_AVATAR_PATH.$avatar))
-                            $flarum_db->query("UPDATE ".Config::FLARUM_PREFIX."users SET avatar_path = '$avatar' WHERE id = {$row["uid"]}");
+                            $flarum_db->query("UPDATE ".Config::FLARUM_PREFIX."users SET avatar_url = '$avatar' WHERE id = {$row["uid"]}");
                     }
                     else
                         echo "Warning: avatar of user id {$row["uid"]} doesn't exist in the mybb avatar path<br />";
@@ -132,7 +132,7 @@
             if(Config::MYBB_SKIP_TSOFTDELETED && $trow["visible"] == -1) continue;
 
             $participants = array();
-            $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions (id, title, start_time, start_user_id, start_post_id, last_time, last_user_id, slug, is_approved, is_locked, is_sticky)
+            $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions (id, title, created_at, user_id, first_post_id, last_posted_at, last_posted_user_id, slug, is_approved, is_locked, is_sticky)
             VALUES ({$trow["tid"]}, '{$flarum_db->escape_string($trow["subject"])}', '{$trow["dateline"]}', {$trow["uid"]}, {$trow["firstpost"]}, '{$trow["lastpost"]}', {$trow["lastposteruid"]}, '".to_slug($trow["subject"])."', 1, ".($trow["closed"] == "1" ? "1" : "0").", {$trow["sticky"]})");
 
             if($result === false) die("Error executing query (at tid {$trow["tid"]}, saving thread as discussion): ".$flarum_db->error);
@@ -154,12 +154,12 @@
                 $lastpostnumber++;
 
                 $content = substr($flarum_db->escape_string($parser->parse($row["message"])), 0, 65535);
-                $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."posts (id, discussion_id, time, user_id, type, content, is_approved, number, ip_address) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1, $lastpostnumber, '".$user_ips[(int)$row["uid"]]."')");
+                $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."posts (id, discussion_id, created_at, user_id, type, content, is_approved, number, ip_address) VALUES ({$row["pid"]}, {$trow["tid"]}, '{$row["dateline"]}', {$row["uid"]}, 'comment', '$content', 1, $lastpostnumber, '".$user_ips[(int)$row["uid"]]."')");
                 if($result === false)  die("Error executing query (at pid {$row["pid"]}, saving as post): ".$flarum_db->error);
 
                 $lastpost = (int)$row["pid"];
             }
-            $flarum_db->query("UPDATE ".Config::FLARUM_PREFIX."discussions SET participants_count = ". count($participants) . ", comments_count =  $lastpostnumber, last_post_id = $lastpost, last_post_number = $lastpostnumber WHERE id = {$trow["tid"]}");
+            $flarum_db->query("UPDATE ".Config::FLARUM_PREFIX."discussions SET participant_count = ". count($participants) . ", comment_count =  $lastpostnumber, last_post_id = $lastpost, last_post_number = $lastpostnumber WHERE id = {$trow["tid"]}");
         }
     }
     echo "Done: migrated ".$threads->num_rows." threads with their posts";
@@ -205,12 +205,12 @@
             $lastpostnumber = 1;
             $title = $flarum_db->escape_string($row["subject"]);
 
-            $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions (title, participants_count, start_time, start_user_id, slug) VALUES ('$title', 2, $time, $sender, '".to_slug($row["subject"], true)."')");
+            $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions (title, participant_count, created_at, user_id, slug) VALUES ('$title', 2, $time, $sender, '".to_slug($row["subject"], true)."')");
             if($result === false) die("Error executing query (at pmid {$row["pmid"]}, saving as private message discussion): ".$flarum_db->error);
             $dID = $flarum_db->insert_id;
 
             $content = $flarum_db->escape_string($parser->parse($row["message"]));
-            $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."posts (discussion_id, time, user_id, type, content, is_approved, number) VALUES ($dID, $time, $sender, 'comment', '$content', 1, $lastpostnumber)");
+            $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."posts (discussion_id, created_at, user_id, type, content, is_approved, number) VALUES ($dID, $time, $sender, 'comment', '$content', 1, $lastpostnumber)");
             $startpID = $flarum_db->insert_id;
 
             $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ($dID, $tag_id)");
@@ -229,13 +229,13 @@
                     $ptime = "FROM_UNIXTIME('{$prow["dateline"]}')";
                     $lastID = (int)$prow["fromid"];
 
-                    $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."posts (discussion_id, time, user_id, type, content, is_approved, number) VALUES ($dID, $ptime, $lastID, 'comment', '$content', 1, $lastpostnumber)");
+                    $result = $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."posts (discussion_id, created_at, user_id, type, content, is_approved, number) VALUES ($dID, $ptime, $lastID, 'comment', '$content', 1, $lastpostnumber)");
                     if($result === false)  die("Error executing query (at pmid {$prow["pmid"]}, saving private message repies as posts): ".$flarum_db->error);
                     $lastpID = $flarum_db->insert_id;
                 }
             }
 
-            $flarum_db->query("UPDATE ".Config::FLARUM_PREFIX."discussions SET start_post_id = $startpID, last_time = $ptime, last_user_id = $lastID, last_post_number = $lastpostnumber, last_post_id = $lastpID, comments_count = $lastpostnumber WHERE id = $dID");
+            $flarum_db->query("UPDATE ".Config::FLARUM_PREFIX."discussions SET first_post_id = $startpID, last_posted_at = $ptime, last_posted_user_id = $lastID, last_post_number = $lastpostnumber, last_post_id = $lastpID, comment_count = $lastpostnumber WHERE id = $dID");
         }
     }
 
