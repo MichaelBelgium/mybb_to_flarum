@@ -13,7 +13,7 @@ This is a PHP migration script to migrate most data from a mybb forum to a fresh
 * Private messages (if required extension is installed)
 
 ## Instructions
-**This script has been tested with: MyBB v1.8.12 and Flarum v0.1.0-beta.7**
+**This script has been tested with: MyBB v1.8.19 and Flarum v0.1.0-beta.8**
 
 To get this to work u only need your (old) mybb database and a (recommended: fresh - altho it truncates everything) installed flarum forum.
 Afterwards you need to edit the `migration_config.php` file so it can connect.
