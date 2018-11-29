@@ -22,7 +22,10 @@
 
     echo "<p>Migrating users ...<br />";
 
+    $flarum_db->query("SET FOREIGN_KEY_CHECKS = 0");
+    
     $users = $mybb_db->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM ".Config::MYBB_PREFIX."users");
+
     if($users->num_rows > 0)
     {
         $flarum_db->query("TRUNCATE TABLE ".Config::FLARUM_PREFIX."users");
@@ -51,11 +54,14 @@
             {
                 if(!empty(Config::MYBB_PATH) && !empty($row["avatar"]))
                 {
-                    $avatar = explode("?", basename($row["avatar"]))[0];
-                    if(file_exists(Config::MYBB_PATH.$row["avatar"]))
+                    $fullpath = Config::MYBB_PATH.explode("?", $row["avatar"])[0];
+                    $avatar = basename($fullpath);
+                    if(file_exists($fullpath))
                     {
-                        if(copy(Config::MYBB_PATH.$row["avatar"],Config::FLARUM_AVATAR_PATH.$avatar))
+                        if(copy($fullpath,Config::FLARUM_AVATAR_PATH.$avatar))
                             $flarum_db->query("UPDATE ".Config::FLARUM_PREFIX."users SET avatar_url = '$avatar' WHERE id = {$row["uid"]}");
+                        else
+                            echo "Warning: could not copy avatar of user id {$row["uid"]}";
                     }
                     else
                         echo "Warning: avatar of user id {$row["uid"]} doesn't exist in the mybb avatar path<br />";
@@ -63,9 +69,10 @@
             }
         }
     }
+    $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."group_user (user_id, group_id) VALUES (1, 1)"); //set first account as admin automaticly
     echo "Done: migrated ".$users->num_rows." users.</p>";
-    echo "<p>Migrating categories to tags and forums to sub-tags ...<br />";
 
+    echo "<p>Migrating categories to tags and forums to sub-tags ...<br />";
     //categories
     $categories = $mybb_db->query("SELECT fid, name, description FROM ".Config::MYBB_PREFIX."forums WHERE type = 'c'");
     if($categories->num_rows > 0)
