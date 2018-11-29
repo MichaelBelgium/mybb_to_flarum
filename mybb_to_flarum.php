@@ -1,4 +1,4 @@
-    <?php
+<?php
     include "../vendor/autoload.php";
     require "migration_config.php";
     
@@ -151,7 +151,7 @@
             {
                 if(Config::MYBB_SKIP_PSOFTDELETED)
                     if($row["visible"] == -1 && $row["pid"] != $trow["firstpost"]) continue;
-                    
+
                 if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
                 $lastpostnumber++;
 
@@ -221,7 +221,7 @@
             $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."posts (discussion_id, created_at, user_id, type, content, is_approved, number) VALUES ($dID, $time, $sender, 'comment', '$content', 1, $lastpostnumber)");
             $startpID = $flarum_db->insert_id;
 
-            $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ($dID, $tag_id)");
+            $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussion_tag (discussion_id, tag_id) VALUES ($dID, $tag_id)");
 
             $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."recipients (discussion_id, user_id, created_at, updated_at) VALUES ($dID, $sender, $time, $time)");
             $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."recipients (discussion_id, user_id, created_at, updated_at) VALUES ($dID, $receiver, $time, $time)");
