@@ -13,12 +13,12 @@ This is a PHP migration script to migrate most data from a mybb forum to a fresh
 * Private messages (if required extension is installed)
 
 ## Instructions
-**This script has been tested with: MyBB v1.8.12 and Flarum v0.1.0-beta.7**
+**This script has been tested with: MyBB v1.8.19 and Flarum v0.1.0-beta.8**
 
 To get this to work u only need your (old) mybb database and a (recommended: fresh - altho it truncates everything) installed flarum forum.
 Afterwards you need to edit the `migration_config.php` file so it can connect.
 
-When this is done, you only need to upload these files to the <u>root of your Flarum installation</u>.
+When this is done, you only need to put these files to the <u>public folder of your Flarum installation</u>.
 This is because Flarum uses [the s9e TextFormatter](https://github.com/s9e/TextFormatter) and the script uses it too to parse and save the content of the mybb posts.
 At last but not least browse to `www.mywebsite.com/myflarumforum/mybb_to_flarum.php` and let it do its job.
 

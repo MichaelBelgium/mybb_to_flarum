@@ -10,7 +10,7 @@ class Config
     const FLARUM_USER = "";
     const FLARUM_PASSWORD = "";
     const FLARUM_DB = "";
-    const FLARUM_PREFIX = "flar_";
+    const FLARUM_PREFIX = "";
 
     const FLARUM_AVATAR_PATH = "assets/avatars/";   //relative path from the script, normally not needed to edit this. (Only used if $MIGRATE_AVATARS = true)
     const FLARUM_PM_TAG = "Private Discussions";    //name of the tag for private messages/discussions
