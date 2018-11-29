@@ -125,7 +125,7 @@
     if($threads->num_rows > 0)
     {    
         $flarum_db->query("TRUNCATE TABLE ".Config::FLARUM_PREFIX."discussions");
-        $flarum_db->query("TRUNCATE TABLE ".Config::FLARUM_PREFIX."discussions_tags");
+        $flarum_db->query("TRUNCATE TABLE ".Config::FLARUM_PREFIX."discussion_tag");
         $flarum_db->query("TRUNCATE TABLE ".Config::FLARUM_PREFIX."posts");
 
         while($trow = $threads->fetch_assoc())
@@ -138,9 +138,9 @@
 
             if($result === false) die("Error executing query (at tid {$trow["tid"]}, saving thread as discussion): ".$flarum_db->error);
 
-            $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$trow["fid"]})");
+            $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussion_tag (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$trow["fid"]})");
             if (array_key_exists($trow["fid"], $parent_tags))
-                $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussions_tags (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$parent_tags[$trow["fid"]]})");
+                $flarum_db->query("INSERT INTO ".Config::FLARUM_PREFIX."discussion_tag (discussion_id, tag_id) VALUES ({$trow["tid"]}, {$parent_tags[$trow["fid"]]})");
 
             $posts = $mybb_db->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message, visible FROM ".Config::MYBB_PREFIX."posts WHERE tid = {$trow["tid"]}");
             $lastpost = null;
@@ -151,6 +151,7 @@
             {
                 if(Config::MYBB_SKIP_PSOFTDELETED)
                     if($row["visible"] == -1 && $row["pid"] != $trow["firstpost"]) continue;
+                    
                 if(!in_array($row["uid"], $participants)) $participants[] = (int)$row["uid"];
                 $lastpostnumber++;
 
