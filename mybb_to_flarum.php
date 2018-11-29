@@ -20,12 +20,6 @@
     $result = $flarum_db->query("SELECT 1 FROM ".Config::FLARUM_PREFIX."recipients LIMIT 1");
     if($result !== false) $extension_installed = true;
 
-    if($extension_installed)
-    {
-        $flarum_db->query("SET FOREIGN_KEY_CHECKS = 0");
-        $flarum_db->query("TRUNCATE TABLE ". Config::FLARUM_PREFIX ."recipients");
-    }
-
     echo "<p>Migrating users ...<br />";
 
     $users = $mybb_db->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM ".Config::MYBB_PREFIX."users");
@@ -179,9 +173,15 @@
     }
     echo "Done: migrated ".$groups->num_rows." custom groups.</p>";
 
-    if(!$extension_installed) exit;
+    if(!$extension_installed)
+    {
+        $flarum_db->query("SET FOREIGN_KEY_CHECKS = 1");
+        exit;
+    }
 
     echo "<p>Migrating private messages...<br />";
+    
+    $flarum_db->query("TRUNCATE TABLE ". Config::FLARUM_PREFIX ."recipients");
 
     $pms = $mybb_db->query("SELECT * FROM ".Config::MYBB_PREFIX."privatemessages WHERE folder = 2 AND subject NOT LIKE 'RE: %' AND subject NOT LIKE '%buddy request%' ORDER BY dateline ASC");
     if($pms->num_rows > 0)
@@ -241,4 +241,5 @@
 
     echo "Done: migrated ".$pms->num_rows." private messages</p>";
 
+    $flarum_db->query("SET FOREIGN_KEY_CHECKS = 1");
 ?>
