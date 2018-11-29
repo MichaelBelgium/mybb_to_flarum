@@ -1,5 +1,5 @@
     <?php
-    include "vendor/autoload.php";
+    include "../vendor/autoload.php";
     require "migration_config.php";
     
     set_time_limit(0);
