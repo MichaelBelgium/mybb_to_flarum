@@ -161,7 +161,7 @@
 
                 $lastpost = (int)$row->pid;
             }
-            $flarum_db->query("UPDATE ".Config::FLARUM_PREFIX."discussions SET participant_count = ". count($participants) . ", comment_count =  $lastpostnumber, last_post_id = $lastpost, last_post_number = $lastpostnumber WHERE id = {$trow->tid}");
+            $flarum_db->query("UPDATE ".Config::FLARUM_PREFIX."discussions SET participant_count = ". count($participants) . ", comment_count =  $lastpostnumber, last_post_id = $lastpost, last_post_number = $lastpostnumber, post_number_index = {$posts->num_rows} WHERE id = {$trow->tid}");
         }
     }
     echo "Done: migrated ".$threads->num_rows." threads with their posts";
