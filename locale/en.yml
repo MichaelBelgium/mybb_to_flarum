@@ -4,6 +4,6 @@ mybbtoflarum:
       title: MyBB to Flarum
       description: Convert a MyBB forum into this Flarum instance
     page:
-      text: Bla Bla
+      text: Convert a Mybb forum into this Flarum instance. Fill in the required data in the settings, aftwards migrate.
       btnSettings: Settings
-      btnConvert: Convert
+      btnConvert: Migrate

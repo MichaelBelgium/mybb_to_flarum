@@ -12,12 +12,12 @@ export default class MybbToFlarumSettingsModal extends SettingsModal {
     form() {
         return [
             <div className="Form-group">
-                <label>{app.translator.trans('acme-helloworld.admin.settings.firstSetting')}</label>
+                <label>Test</label>
                 <input className="FormControl" bidi={this.setting('acme.helloworld.firstSetting')}/>
             </div>,
 
             <div className="Form-group">
-                <label>{app.translator.trans('acme-helloworld.admin.settings.secondSetting')}</label>
+                <label>Another test</label>
                 <input className="FormControl" bidi={this.setting('acme.helloworld.secondSetting')}/>
             </div>,
         ];

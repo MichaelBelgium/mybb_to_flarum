@@ -5,7 +5,8 @@ import Button from 'flarum/components/Button';
 export default class MybbToFlarumPage extends Page {
   view() {
     return (
-		<div className="container">
+		<div className="mybbtoflarumPage">
+			<div className="container">
 			<p>
 				{app.translator.trans('mybbtoflarum.admin.page.text')}
 			</p>
@@ -15,11 +16,12 @@ export default class MybbToFlarumPage extends Page {
 				onclick: () => app.modal.show(new MybbToFlarumSettingsModal())
 			})}
 			{Button.component({
-				className: 'Button',
+				className: 'Button Button--danger',
 				icon: 'fas fa-exchange-alt',
 				children: app.translator.trans('mybbtoflarum.admin.page.btnConvert'),
-				onclick: () => console.log('convert')
+				onclick: () => console.log(app.extensionSettings)
 			})}
+			</div>
 		</div>
     );
   }
