@@ -1,0 +1,9 @@
+mybbtoflarum:
+  admin:
+    nav:
+      title: MyBB to Flarum
+      description: Convert a MyBB forum into this Flarum instance
+    page:
+      text: Bla Bla
+      btnSettings: Settings
+      btnConvert: Convert
