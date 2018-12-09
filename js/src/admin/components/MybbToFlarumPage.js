@@ -21,7 +21,8 @@ export default class MybbToFlarumPage extends Page {
 			user: m.prop(''),
 			db: m.prop(''),
 			prefix: m.prop(''),
-			password: m.prop('')
+			password: m.prop(''),
+			mybbPath: m.prop('')
 		};
 	}
 
@@ -74,7 +75,7 @@ export default class MybbToFlarumPage extends Page {
 									<input className="FormControl" type="password" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.password')} bidi={this.mybb.password} />,
 									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.db')} bidi={this.mybb.db} />,
 									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.prefix')} bidi={this.mybb.prefix} />,
-									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.mybbPath')} bidi={this.mybb.prefix} name="mybbPath" style="display: none;" />
+									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.mybbPath')} bidi={this.mybb.mybbPath} name="mybbPath" style="display: none;" />
 								]
 							})}
 
