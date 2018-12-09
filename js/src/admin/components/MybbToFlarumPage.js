@@ -17,10 +17,10 @@ export default class MybbToFlarumPage extends Page {
 		this.migrateUserGroups = m.prop(true);
 
 		this.mybb = {
-			host: m.prop(''),
+			host: m.prop('127.0.0.1'),
 			user: m.prop(''),
 			db: m.prop(''),
-			prefix: m.prop(''),
+			prefix: m.prop('mybb_'),
 			password: m.prop(''),
 			mybbPath: m.prop('')
 		};
@@ -31,9 +31,7 @@ export default class MybbToFlarumPage extends Page {
 			<div className="mybbtoflarumPage">
 				<div className="mybbtoflarumPage-header">
 					<div className="container">
-						<p>
-							{app.translator.trans('mybbtoflarum.admin.page.text')}
-						</p>
+						{app.translator.trans('mybbtoflarum.admin.page.text')}
 					</div>
 				</div>
 				<div className="mybbtoflarumPage-content">
@@ -48,9 +46,15 @@ export default class MybbToFlarumPage extends Page {
 											this.migrateAvatars(value);
 
 											if(value)
+											{
 												$("input[name=mybbPath]").show();
+												$("#mybbPath_help").show();
+											}
 											else
+											{
+												$("#mybbPath_help").hide();
 												$("input[name=mybbPath]").hide();
+											}
 										},
 										children: app.translator.trans('mybbtoflarum.admin.page.form.general.migrateAvatars'),
 									}),
@@ -70,12 +74,18 @@ export default class MybbToFlarumPage extends Page {
 							{FieldSet.component({
 								label: app.translator.trans('mybbtoflarum.admin.page.form.mybb.title'),
 								children: [
-									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.host')} bidi={this.mybb.host} />,
-									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.user')} bidi={this.mybb.user} />,
-									<input className="FormControl" type="password" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.password')} bidi={this.mybb.password} />,
-									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.db')} bidi={this.mybb.db} />,
-									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.prefix')} bidi={this.mybb.prefix} />,
-									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.mybbPath')} bidi={this.mybb.mybbPath} name="mybbPath" style="display: none;" />
+									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.host')}</div>,
+									<input className="FormControl" type="text" bidi={this.mybb.host} value={this.mybb.host()} />,
+									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.user')}</div>,
+									<input className="FormControl" type="text" bidi={this.mybb.user} />,
+									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.password')}</div>,
+									<input className="FormControl" type="password" bidi={this.mybb.password} />,
+									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.db')}</div>,
+									<input className="FormControl" type="text" bidi={this.mybb.db} />,
+									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.prefix')}</div>,
+									<input className="FormControl" type="text" bidi={this.mybb.prefix} value={this.mybb.prefix()} />,
+									<div className="helpText" id="mybbPath_help" style="display: none;">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.mybbPath')}</div>,
+									<input className="FormControl" type="text" bidi={this.mybb.mybbPath} name="mybbPath" style="display: none;" placeholder="/path/to/mybb" />
 								]
 							})}
 

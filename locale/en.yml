@@ -19,7 +19,7 @@ mybbtoflarum:
           password: Database password
           db: Database name
           prefix: Table prefix
-          mybbPath: Absolute MyBB path (/path/to/mybb)
+          mybbPath: Absolute MyBB path
         options:
           title: General migrate options
           migrateUsers: Migrate users
