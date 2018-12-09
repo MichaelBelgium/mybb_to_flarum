@@ -130,22 +130,32 @@ export default class MybbToFlarumPage extends Page {
 	}
 	
 	onsubmit(e) {
-		console.log(this.migrateAvatars());
-		console.log(this.migrateSoftThreads());
-		console.log(this.migrateSoftPosts());
+		this.loading = true;
 
-		console.log(this.migrateThreadsPosts());
-		console.log(this.migrateUsers());
-		console.log(this.migrateCategories());
-		console.log(this.migrateUserGroups());
+		var fail = false;
 
-		console.log(this.mybb.host());
-		console.log(this.mybb.user());
-		console.log(this.mybb.db());
-		console.log(this.mybb.prefix());
-		console.log(this.mybb.password());
-		// this.loading = true;
+		if(this.migrateAvatars() && this.mybb.mybbPath() === '')
+		{
+			alert('When migrating avatars, the mybb path can not be empty. You need an exisitng mybb installation.');
+			fail = true;
+		}
 
-		location.reload();
+		if(	this.mybb.host() === '' ||
+			this.mybb.user() === '' ||
+			this.mybb.db() === '' ||
+			this.mybb.prefix() === '' ||
+			this.mybb.password() === ''
+		) {
+			alert('Mybb config can not be empty');
+			fail = true;
+		}
+
+		if(fail) 
+		{
+			this.loading = false;
+			return;
+		}
+
+		this.loading = false;
 	}
 }
