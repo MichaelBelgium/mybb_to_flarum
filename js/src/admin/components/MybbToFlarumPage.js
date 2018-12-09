@@ -39,60 +39,68 @@ export default class MybbToFlarumPage extends Page {
 					<div className="container">
 						<form onsubmit={this.onsubmit.bind(this)}>
 							{FieldSet.component({
-								label: 'General settings',
+								label: app.translator.trans('mybbtoflarum.admin.page.form.general.title'),
 								children: [
 									Switch.component({
 										state: this.migrateAvatars(),
-										onchange: this.migrateAvatars,
-										children: 'Migrate avatars',
+										onchange: (value) => {
+											this.migrateAvatars(value);
+
+											if(value)
+												$("input[name=mybbPath]").show();
+											else
+												$("input[name=mybbPath]").hide();
+										},
+										children: app.translator.trans('mybbtoflarum.admin.page.form.general.migrateAvatars'),
 									}),
 									Switch.component({
 										state: this.migrateSoftThreads(),
 										onchange: this.migrateSoftThreads,
-										children: 'Migrate soft deleted threads',
+										children: app.translator.trans('mybbtoflarum.admin.page.form.general.migrateSoftThreads'),
 									}),
 									Switch.component({
 										state: this.migrateSoftPosts(),
 										onchange: this.migrateSoftPosts,
-										children: 'Migrate soft deleted posts',
-									}),
+										children: app.translator.trans('mybbtoflarum.admin.page.form.general.migrateSoftPosts'),
+									})
 								]
 							})}
 
 							{FieldSet.component({
-								label: 'MyBB database connection',
+								label: app.translator.trans('mybbtoflarum.admin.page.form.mybb.title'),
 								children: [
-									<input className="FormControl" type="text" placeholder="Host" bidi={this.mybb.host} />,
-									<input className="FormControl" type="text" placeholder="User" bidi={this.mybb.user} />,
-									<input className="FormControl" type="password" placeholder="Password" bidi={this.mybb.password} />,
-									<input className="FormControl" type="text" placeholder="Database" bidi={this.mybb.db}/>,
-									<input className="FormControl" type="text" placeholder="Table prefix" bidi={this.mybb.prefix}/>
+									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.host')} bidi={this.mybb.host} />,
+									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.user')} bidi={this.mybb.user} />,
+									<input className="FormControl" type="password" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.password')} bidi={this.mybb.password} />,
+									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.db')} bidi={this.mybb.db} />,
+									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.prefix')} bidi={this.mybb.prefix} />,
+									<input className="FormControl" type="text" placeholder={app.translator.trans('mybbtoflarum.admin.page.form.mybb.mybbPath')} bidi={this.mybb.prefix} name="mybbPath" style="display: none;" />
 								]
 							})}
 
 							{FieldSet.component({
-								label: 'General migrate options',
+								label: app.translator.trans('mybbtoflarum.admin.page.form.options.title'),
 								children: [
 									Switch.component({
 										state: this.migrateUsers(),
 										onchange: this.migrateUsers,
-										children: 'Migrate users',
+										children: app.translator.trans('mybbtoflarum.admin.page.form.options.migrateUsers'),
 									}),
 									Switch.component({
 										state: this.migrateThreadsPosts(),
 										onchange: this.migrateThreadsPosts,
-										children: 'Migrate threads and posts',
+										children: app.translator.trans('mybbtoflarum.admin.page.form.options.migrateThreadsPosts'),
 									}),
 									Switch.component({
 										state: this.migrateUserGroups(),
 										onchange: this.migrateUserGroups,
-										children: 'Migrate user groups',
+										children: app.translator.trans('mybbtoflarum.admin.page.form.options.migrateUserGroups'),
 									}),
 									Switch.component({
 										state: this.migrateCategories(),
 										onchange: this.migrateCategories,
-										children: 'Migrate categories',
-									}),
+										children: app.translator.trans('mybbtoflarum.admin.page.form.options.migrateCategories'),
+									})
 								]
 							})}
 
