@@ -7,8 +7,6 @@ import MybbToFlarumPage from './components/MybbToFlarumPage';
 app.initializers.add('michaelbelgium-mybb-to-flarum', () => {
 	app.routes.mybbtoflarum = {path: '/mybb-to-flarum', component: MybbToFlarumPage.component()};
 
-	app.extensionSettings['mybb-to-flarum'] = () => m.route(app.route('mybbtoflarum'));
-
 	extend(AdminNav.prototype, 'items', items => {
 		items.add('pages', AdminLinkButton.component({
 			href: app.route('mybbtoflarum'),

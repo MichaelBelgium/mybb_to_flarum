@@ -2,6 +2,7 @@ import Page from 'flarum/components/Page';
 import Switch from 'flarum/components/Switch';
 import Button from 'flarum/components/Button';
 import FieldSet from 'flarum/components/FieldSet';
+import saveSettings from 'flarum/utils/saveSettings';
 
 export default class MybbToFlarumPage extends Page {
 	init() {
@@ -17,12 +18,12 @@ export default class MybbToFlarumPage extends Page {
 		this.migrateUserGroups = m.prop(true);
 
 		this.mybb = {
-			host: m.prop('127.0.0.1'),
-			user: m.prop(''),
-			db: m.prop(''),
-			prefix: m.prop('mybb_'),
-			password: m.prop(''),
-			mybbPath: m.prop('')
+			host: m.prop(typeof app.data.settings.mybb_host === 'undefined' ? '127.0.0.1' : app.data.settings.mybb_host),
+			user: m.prop(typeof app.data.settings.mybb_user === 'undefined' ? '' : app.data.settings.mybb_user),
+			db: m.prop(typeof app.data.settings.mybb_db === 'undefined' ? '' : app.data.settings.mybb_db),
+			prefix: m.prop(typeof app.data.settings.mybb_prefix === 'undefined' ? 'mybb_' : app.data.settings.mybb_prefix),
+			password: m.prop(typeof app.data.settings.mybb_password === 'undefined' ? '' : app.data.settings.mybb_password),
+			mybbPath: m.prop(typeof app.data.settings.mybb_path === 'undefined' ? '' : app.data.settings.mybb_path)
 		};
 	}
 
@@ -140,21 +141,28 @@ export default class MybbToFlarumPage extends Page {
 			fail = true;
 		}
 
-		if(	this.mybb.host() === '' ||
-			this.mybb.user() === '' ||
-			this.mybb.db() === '' ||
-			this.mybb.prefix() === '' ||
-			this.mybb.password() === ''
-		) {
-			alert('Mybb config can not be empty');
-			fail = true;
-		}
+		Object.keys(this.mybb).forEach(key => {
+			if(key !== 'mybbPath' && this.mybb[key]() === '')
+			{
+				alert('Mybb: ' + key + ' can not be empty');
+				fail = true;
+			}
+		})
 
 		if(fail) 
 		{
 			this.loading = false;
 			return;
 		}
+
+		saveSettings({
+			'mybb_host': this.mybb.host(),
+			'mybb_user': this.mybb.user(),
+			'mybb_password': this.mybb.password(),
+			'mybb_db': this.mybb.db(),
+			'mybb_prefix': this.mybb.prefix(),
+			'mybb_path': this.mybb.mybbPath()
+		});
 
 		this.loading = false;
 	}
