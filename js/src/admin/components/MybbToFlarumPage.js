@@ -131,6 +131,7 @@ export default class MybbToFlarumPage extends Page {
 	}
 	
 	onsubmit(e) {
+		e.preventDefault();
 		this.loading = true;
 
 		var fail = false;
@@ -149,7 +150,7 @@ export default class MybbToFlarumPage extends Page {
 			}
 		})
 
-		if(fail) 
+		if(fail)
 		{
 			this.loading = false;
 			return;
@@ -162,6 +163,16 @@ export default class MybbToFlarumPage extends Page {
 			'mybb_db': this.mybb.db(),
 			'mybb_prefix': this.mybb.prefix(),
 			'mybb_path': this.mybb.mybbPath()
+		}).then(() => {
+			app.request({
+				method: 'POST',
+				url: app.forum.attribute('apiUrl') + '/mybb-to-flarum',
+				data: {
+					avatars: this.migrateAvatars(),
+					softposts: this.migrateSoftPosts(),
+					softthreads: this.migrateSoftThreads()
+				}
+			}).then(data => console.log(data));
 		});
 
 		this.loading = false;
