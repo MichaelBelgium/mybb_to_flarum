@@ -43,6 +43,8 @@ class MybbToFlarumController implements RequestHandlerInterface
                 $this->settings->get('mybb_path')
             );
 
+            if($doGroups)
+                $migrator->migrateUserGroups();
         } catch (Exception $e) {
             $response["error"] = true;
             $response["message"] = $e->getMessage();

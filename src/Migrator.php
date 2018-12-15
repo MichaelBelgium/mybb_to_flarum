@@ -29,6 +29,28 @@ class Migrator
         	mysqli_close($this->getMybbConnection());
     }
 
+	public function migrateUserGroups()
+	{
+		$groups = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}usergroups WHERE type = 2");
+
+		if($groups->num_rows > 0)
+		{
+			Group::where('id', '>', '4')->delete();
+
+			while($row = $groups->fetch_object())
+			{
+				$group = new Group();
+			
+				// $group->id = $row->gid;
+				$group->name_singular = $row->title;
+				$group->name_plural = $row->title;
+				$group->color = $this->generateRandomColor();
+
+				$group->save();
+			}
+		}
+	}
+
 	private function enableForeignKeyChecks()
 	{
 		app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 1');
