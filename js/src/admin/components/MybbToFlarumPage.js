@@ -170,9 +170,13 @@ export default class MybbToFlarumPage extends Page {
 				data: {
 					avatars: this.migrateAvatars(),
 					softposts: this.migrateSoftPosts(),
-					softthreads: this.migrateSoftThreads()
+					softthreads: this.migrateSoftThreads(),
+					doUsers: this.migrateUsers(),
+					doThreadsPosts: this.migrateThreadsPosts(),
+					doGroups: this.migrateUserGroups(),
+					doCategories: this.migrateCategories()
 				}
-			}).then(data => console.log(data));
+			}).then(data => alert(data));
 		});
 
 		this.loading = false;
