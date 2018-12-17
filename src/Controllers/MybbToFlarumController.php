@@ -45,6 +45,10 @@ class MybbToFlarumController implements RequestHandlerInterface
 
             if($doGroups)
                 $migrator->migrateUserGroups();
+
+            if($doUsers)
+                $migrator->migrateUsers($migrate_avatars);
+            
         } catch (Exception $e) {
             $response["error"] = true;
             $response["message"] = $e->getMessage();

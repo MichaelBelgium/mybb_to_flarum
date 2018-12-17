@@ -51,6 +51,52 @@ class Migrator
 		}
 	}
 
+	public function migrateUsers(bool $migrateAvatars = false)
+	{
+		$this->disableForeignKeyChecks();
+		
+		$users = $this->getMybbConnection()->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM {$this->getPrefix()}users");
+		
+		if($users->num_rows > 0)
+    	{
+			User::truncate();
+
+			while($row = $users->fetch_object())
+			{
+				$newUser = User::register(
+					$row->username, 
+					$row->email, 
+					password_hash(time(), PASSWORD_BCRYPT)
+				);
+
+				$newUser->activate();
+				$newUser->joined_at = $row->regdate;
+				$newUser->last_seen_at = $row->lastvisit;
+				$newUser->discussion_count = $row->threadnum;
+				$newUser->comment_count = $row->postnum;
+
+				if($migrateAvatars && !empty($this->getMybbPath()) && !empty($row->avatar))
+				{
+					$fullpath = $this->getMybbPath().explode("?", $row->avatar)[0];
+					$avatar = basename($fullpath);
+					if(file_exists($fullpath))
+					{
+						if(copy($fullpath,self::FLARUM_AVATAR_PATH.$avatar))
+							$newUser->changeAvatarPath($avatar);
+						// else
+						// 	echo "Warning: could not copy avatar of user id {$row->uid}";
+					}
+					// else
+					// 	echo "Warning: avatar of user id {$row->uid} doesn't exist in the mybb avatar path<br />";
+				}
+
+				$newUser->save();
+			}
+		}
+
+		$this->enableForeignKeyChecks();
+	}
+
 	private function enableForeignKeyChecks()
 	{
 		app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 1');
