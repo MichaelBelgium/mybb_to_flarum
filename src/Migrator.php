@@ -41,7 +41,7 @@ class Migrator
 			{
 				$group = new Group();
 			
-				// $group->id = $row->gid;
+				$group->id = $row->gid;
 				$group->name_singular = $row->title;
 				$group->name_plural = $row->title;
 				$group->color = $this->generateRandomColor();
@@ -51,7 +51,7 @@ class Migrator
 		}
 	}
 
-	public function migrateUsers(bool $migrateAvatars = false)
+	public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false)
 	{
 		$this->disableForeignKeyChecks();
 		
@@ -91,6 +91,18 @@ class Migrator
 				}
 
 				$newUser->save();
+
+				if($migrateWithUserGroups)
+				{
+					$userGroups = explode(",", $row->additionalgroups);
+					$userGroups[] = (int)$row->usergroup;
+
+					foreach($userGroups as $group)
+					{
+						if((int)$group <= 7) continue;
+						$newUser->groups()->save(Group::find($group));
+					}
+				}
 			}
 		}
 
