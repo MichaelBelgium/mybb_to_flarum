@@ -48,13 +48,11 @@ export default class MybbToFlarumPage extends Page {
 
 											if(value)
 											{
-												$("input[name=mybbPath]").show();
-												$("#mybbPath_help").show();
+												$("input[name=mybbPath]").removeAttr("disabled");
 											}
 											else
 											{
-												$("#mybbPath_help").hide();
-												$("input[name=mybbPath]").hide();
+												$("input[name=mybbPath]").attr("disabled", "disabled");
 											}
 										},
 										children: app.translator.trans('mybbtoflarum.admin.page.form.general.migrateAvatars'),
@@ -85,8 +83,8 @@ export default class MybbToFlarumPage extends Page {
 									<input className="FormControl" type="text" bidi={this.mybb.db} />,
 									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.prefix')}</div>,
 									<input className="FormControl" type="text" bidi={this.mybb.prefix} value={this.mybb.prefix()} />,
-									<div className="helpText" id="mybbPath_help" style="display: none;">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.mybbPath')}</div>,
-									<input className="FormControl" type="text" bidi={this.mybb.mybbPath} name="mybbPath" style="display: none;" placeholder="/path/to/mybb" />
+									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.mybbPath')}</div>,
+									<input className="FormControl" type="text" bidi={this.mybb.mybbPath} name="mybbPath" placeholder="/path/to/mybb" disabled />
 								]
 							})}
 
