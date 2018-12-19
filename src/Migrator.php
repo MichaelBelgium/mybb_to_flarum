@@ -109,6 +109,69 @@ class Migrator
 		$this->enableForeignKeyChecks();
 	}
 
+	public function migrateCategories()
+	{
+		// $forumsdone = [];
+		$this->disableForeignKeyChecks();
+
+		$categories = $this->getMybbConnection()->query("SELECT fid, name, description, linkto, disporder, parentlist FROM {$this->getPrefix()}forums");
+
+		if($categories->num_rows > 0)
+		{
+			Tag::truncate();
+			//TODO truncate also discussion_tag
+
+			while($row = $categories->fetch_object())
+			{
+				// if(in_array($row->fid, $forumsdone)) continue;
+
+				//TODO FIND BETTER WAY TO LINK PARENT FORUMS
+
+				// $parents = explode(",", $row->parentlist);
+				// unset($parents[count($parents) - 1]);
+
+				// foreach ($parents as $forumId)
+				// {
+				// 	if(in_array($forumId, $forumsdone)) continue;
+
+				// 	$parent = $this->getMybbConnection()->query("SELECT fid, name, description, linkto, disporder FROM {$this->getPrefix()}forums WHERE fid = $forumId");
+				// 	$parentrow = $parent->fetch_object();
+
+				// 	$this->saveTag($parentrow);
+				// 	$forumsdone[] = $parentrow->fid;
+				// }
+
+				// $this->saveTag($row, count($parents) > 0 ? Tag::find($parents[count($parents) - 1]) : null);
+				// $forumsdone[] = $row->fid;
+
+				$this->saveTag($row);
+			}
+		}
+
+		$this->enableForeignKeyChecks();
+	}
+
+	private function saveTag($row, Tag $parent = null): ?Tag
+	{
+		if(!empty($row->linkto)) return null; //forums with links are not supported in flarum
+
+		$tag = new Tag();
+
+		$tag->id = $row->fid;
+		$tag->name = $row->name;
+		$tag->slug = $this->slugTag($row->name);
+		$tag->description = $row->description;
+		$tag->color = $this->generateRandomColor();
+		$tag->position = (int)$row->disporder - 1;
+
+		if(!is_null($parent))
+			$tag->parent()->associate($parent);
+
+		$saved = $tag->save();
+
+		return $saved ? $tag : null;
+	}
+
 	private function enableForeignKeyChecks()
 	{
 		app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 1');
@@ -142,5 +205,13 @@ class Migrator
 	private function getMybbConnection()
 	{
 		return $this->connection;
+	}
+
+	private function slugTag(string $value)
+	{
+		$slug = Str::slug($value);
+		$count = Tag::where('slug', 'LIKE', $slug . '%')->get()->count();
+
+		return $slug . ($count > 0 ? "-$count" : "");
 	}
 }
