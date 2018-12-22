@@ -4,9 +4,10 @@ namespace michaelbelgium\mybbtoflarum;
 use Flarum\User\User;
 use Flarum\Tags\Tag;
 use Flarum\Group\Group;
+use Flarum\Discussion\Discussion;
+use Flarum\Post\CommentPost;
+use Flarum\Post\Post;
 use Flarum\Util\Str;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class Migrator
 {
@@ -134,25 +135,74 @@ class Migrator
 		}
 	}
 
-	private function saveTag($row, Tag $parent = null): ?Tag
+	public function migrateDiscussions(bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
 	{
-		if(!empty($row->linkto)) return null; //forums with links are not supported in flarum
+		$threads = $this->getMybbConnection()->query("SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM {$this->getPrefix()}threads");
 
-		$tag = new Tag();
+		if($threads->num_rows > 0)
+		{
+			Discussion::getQuery()->delete();
+			Post::getQuery()->delete();
 
-		$tag->id = $row->fid;
-		$tag->name = $row->name;
-		$tag->slug = $this->slugTag($row->name);
-		$tag->description = $row->description;
-		$tag->color = $this->generateRandomColor();
-		$tag->position = (int)$row->disporder - 1;
+			while($trow = $threads->fetch_object())
+			{
+				if(!$migrateSoftDeletedThreads && $trow->visible == -1) continue;
 
-		if(!is_null($parent))
-			$tag->parent()->associate($parent);
+				$tag = Tag::find($trow->fid);
 
-		$saved = $tag->save();
+				$discussion = new Discussion();
+				$discussion->id = $trow->tid;
+				$discussion->title = $trow->subject;
+				$discussion->user()->associate(User::find($trow->uid));
+				$discussion->slug = $this->slugDiscussion($trow->subject);
+				$discussion->is_approved = true;
+				$discussion->is_locked = $trow->closed == "1";
+				$discussion->is_sticky = $trow->sticky;
 
-		return $saved ? $tag : null;
+				$discussion->save();
+
+				$continue = true;
+
+				if(!is_null($tag))
+				{
+					do {
+						$tag->discussions()->save($discussion);
+	
+						if(is_null($tag->parent_id))
+							$continue = false;
+						else
+							$tag = Tag::find($tag->parent_id);
+						
+					} while($continue);
+				}
+
+				$posts = $this->getMybbConnection()->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message, visible FROM {$this->getPrefix()}posts WHERE tid = {$discussion->id} order by pid");
+
+				$number = 0;
+				$firstPost = null;
+				while($prow = $posts->fetch_object())
+				{
+					if(!$migrateSoftDeletePosts && $prow->visible == -1) continue;
+
+					$post = CommentPost::reply($discussion->id, $prow->message, $prow->uid, null);
+					$post->created_at = $prow->dateline;
+					$post->is_approved = true;
+					$post->number = ++$number;
+
+					$post->save();
+
+					if(is_null($firstPost))
+						$firstPost = $post;
+				}
+
+				$discussion->setFirstPost($firstPost);
+				$discussion->refreshCommentCount();
+				$discussion->refreshLastPost();
+				$discussion->refreshParticipantCount();
+
+				$discussion->save();
+			}
+		}
 	}
 
 	private function enableForeignKeyChecks()
@@ -196,5 +246,13 @@ class Migrator
 		$count = Tag::where('slug', 'LIKE', $slug . '%')->get()->count();
 
 		return $slug . ($count > 0 ? "-$count" : "");
+	}
+
+	private function slugDiscussion(string $value)
+	{
+		$slug = Str::slug($value);
+		$count = Discussion::where('slug', 'LIKE', $slug . '%')->get()->count();
+
+		return $slug . ($count > 0 ? "-$count": "");
 	}
 }
