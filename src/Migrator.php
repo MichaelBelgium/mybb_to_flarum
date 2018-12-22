@@ -111,44 +111,31 @@ class Migrator
 
 	public function migrateCategories()
 	{
-		// $forumsdone = [];
-		$this->disableForeignKeyChecks();
-
-		$categories = $this->getMybbConnection()->query("SELECT fid, name, description, linkto, disporder, parentlist FROM {$this->getPrefix()}forums");
+		$categories = $this->getMybbConnection()->query("SELECT fid, name, description, linkto, disporder, pid FROM {$this->getPrefix()}forums order by fid");
 
 		if($categories->num_rows > 0)
 		{
-			Tag::truncate();
-			//TODO truncate also discussion_tag
+			Tag::getQuery()->delete();
 
 			while($row = $categories->fetch_object())
 			{
-				// if(in_array($row->fid, $forumsdone)) continue;
+				if(!empty($row->linkto)) continue; //forums with links are not supported in flarum
 
-				//TODO FIND BETTER WAY TO LINK PARENT FORUMS
+				$tag = new Tag();
 
-				// $parents = explode(",", $row->parentlist);
-				// unset($parents[count($parents) - 1]);
+				$tag->id = $row->fid;
+				$tag->name = $row->name;
+				$tag->slug = $this->slugTag($row->name);
+				$tag->description = $row->description;
+				$tag->color = $this->generateRandomColor();
+				$tag->position = (int)$row->disporder - 1;
 
-				// foreach ($parents as $forumId)
-				// {
-				// 	if(in_array($forumId, $forumsdone)) continue;
+				if($row->pid != 0)
+					$tag->parent()->associate(Tag::find($row->pid));
 
-				// 	$parent = $this->getMybbConnection()->query("SELECT fid, name, description, linkto, disporder FROM {$this->getPrefix()}forums WHERE fid = $forumId");
-				// 	$parentrow = $parent->fetch_object();
-
-				// 	$this->saveTag($parentrow);
-				// 	$forumsdone[] = $parentrow->fid;
-				// }
-
-				// $this->saveTag($row, count($parents) > 0 ? Tag::find($parents[count($parents) - 1]) : null);
-				// $forumsdone[] = $row->fid;
-
-				$this->saveTag($row);
+				$tag->save();
 			}
 		}
-
-		$this->enableForeignKeyChecks();
 	}
 
 	private function saveTag($row, Tag $parent = null): ?Tag
