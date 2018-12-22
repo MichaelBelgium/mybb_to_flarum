@@ -121,13 +121,9 @@ class Migrator
 			{
 				if(!empty($row->linkto)) continue; //forums with links are not supported in flarum
 
-				$tag = new Tag();
+				$tag = Tag::build($row->name, $this->slugTag($row->name), $row->description, $this->generateRandomColor(), false);
 
 				$tag->id = $row->fid;
-				$tag->name = $row->name;
-				$tag->slug = $this->slugTag($row->name);
-				$tag->description = $row->description;
-				$tag->color = $this->generateRandomColor();
 				$tag->position = (int)$row->disporder - 1;
 
 				if($row->pid != 0)
