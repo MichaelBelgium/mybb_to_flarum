@@ -53,7 +53,7 @@ class MybbToFlarumController implements RequestHandlerInterface
                 $migrator->migrateCategories();
             
             if($doThreadsPosts)
-                $migrator->migrateDiscussions($migrate_softthreads, $migrate_softposts);
+                $migrator->migrateDiscussions($doUsers, $migrate_softthreads, $migrate_softposts);
 
         } catch (Exception $e) {
             $response["error"] = true;

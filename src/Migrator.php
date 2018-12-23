@@ -135,7 +135,7 @@ class Migrator
 		}
 	}
 
-	public function migrateDiscussions(bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
+	public function migrateDiscussions(bool $migrateUsers, bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
 	{
 		$threads = $this->getMybbConnection()->query("SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM {$this->getPrefix()}threads");
 
@@ -143,6 +143,7 @@ class Migrator
 		{
 			Discussion::getQuery()->delete();
 			Post::getQuery()->delete();
+			$usersToRefresh = [];
 
 			while($trow = $threads->fetch_object())
 			{
@@ -153,13 +154,19 @@ class Migrator
 				$discussion = new Discussion();
 				$discussion->id = $trow->tid;
 				$discussion->title = $trow->subject;
-				$discussion->user()->associate(User::find($trow->uid));
+
+				if($migrateUsers)
+					$discussion->user()->associate(User::find($trow->uid));
+				
 				$discussion->slug = $this->slugDiscussion($trow->subject);
 				$discussion->is_approved = true;
 				$discussion->is_locked = $trow->closed == "1";
 				$discussion->is_sticky = $trow->sticky;
 
 				$discussion->save();
+
+				if(!in_array($trow->uid, $usersToRefresh))
+					$usersToRefresh[] = $trow->uid;
 
 				$continue = true;
 
@@ -193,6 +200,9 @@ class Migrator
 
 					if(is_null($firstPost))
 						$firstPost = $post;
+
+					if(!in_array($prow->uid, $usersToRefresh))
+						$usersToRefresh[] = $prow->uid;
 				}
 
 				$discussion->setFirstPost($firstPost);
@@ -201,6 +211,17 @@ class Migrator
 				$discussion->refreshParticipantCount();
 
 				$discussion->save();
+			}
+
+			if($migrateUsers)
+			{
+				foreach ($usersToRefresh as $userId) 
+				{
+					$user = User::find($userId);
+					$user->refreshCommentCount();
+					$user->refreshDiscussionCount();
+					$user->save();
+				}
 			}
 		}
 	}
