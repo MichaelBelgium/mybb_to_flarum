@@ -135,7 +135,7 @@ class Migrator
 		}
 	}
 
-	public function migrateDiscussions(bool $migrateUsers, bool $migrateCategories, bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
+	public function migrateDiscussions(bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
 	{
 		$threads = $this->getMybbConnection()->query("SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM {$this->getPrefix()}threads");
 
@@ -155,7 +155,7 @@ class Migrator
 				$discussion->id = $trow->tid;
 				$discussion->title = $trow->subject;
 
-				if($migrateUsers)
+				if($migrateWithUsers)
 					$discussion->user()->associate(User::find($trow->uid));
 				
 				$discussion->slug = $this->slugDiscussion($trow->subject);
@@ -170,7 +170,7 @@ class Migrator
 
 				$continue = true;
 
-				if(!is_null($tag) && $migrateCategories)
+				if(!is_null($tag) && $migrateWithCategories)
 				{
 					do {
 						$tag->discussions()->save($discussion);
@@ -213,7 +213,7 @@ class Migrator
 				$discussion->save();
 			}
 
-			if($migrateUsers)
+			if($migrateWithUsers)
 			{
 				foreach ($usersToRefresh as $userId) 
 				{
