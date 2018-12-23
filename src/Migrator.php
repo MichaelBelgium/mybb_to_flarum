@@ -135,7 +135,7 @@ class Migrator
 		}
 	}
 
-	public function migrateDiscussions(bool $migrateUsers, bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
+	public function migrateDiscussions(bool $migrateUsers, bool $migrateCategories, bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
 	{
 		$threads = $this->getMybbConnection()->query("SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM {$this->getPrefix()}threads");
 
@@ -170,7 +170,7 @@ class Migrator
 
 				$continue = true;
 
-				if(!is_null($tag))
+				if(!is_null($tag) && $migrateCategories)
 				{
 					do {
 						$tag->discussions()->save($discussion);
