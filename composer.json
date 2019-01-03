@@ -1,0 +1,30 @@
+{
+  "name": "michaelbelgium/mybb-to-flarum",
+  "description": "Migrate a MyBB Forum to a fresh Flarum instance",
+  "type": "flarum-extension",
+  "require": {
+    "flarum/core": "^0.1.0-beta.8"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Michael V.",
+      "email": "michael@michaelbelgium.me"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "michaelbelgium\\mybbtoflarum\\": "src/"
+    }
+  },
+  "extra": {
+    "flarum-extension": {
+      "title": "MyBB to Flarum",
+      "icon": {
+        "name": "fas fa-exchange-alt",
+        "backgroundColor": "#FFB300",
+        "color": "#fff"
+      }
+    }
+  }
+}

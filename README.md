@@ -1,37 +1,25 @@
 # mybb_to_flarum
 
-This is a PHP migration script to migrate most data from a mybb forum to a fresh flarum forum.
+This is a [Flarum](https://flarum.org/) extension to migrate data from a mybb forum to a fresh flarum instance.
 
-## What does it migrate?
+## What can it migrate?
+
+In your admin panel you can choose what to migrate.
 
 * Users (their passwords are ALL reset to a bcrypt hash from current time)
 * Categories
 * Forums
 * Posts
 * Groups
-* Avatars (if specified)
-* Private messages (if required extension is installed)
+* Avatars
 
-## Instructions
-**This script has been tested with: MyBB v1.8.19 and Flarum v0.1.0-beta.8**
+## Installation
 
-To get this to work u only need your (old) mybb database and a (recommended: fresh - altho it truncates everything) installed flarum forum.
-Afterwards you need to edit the `migration_config.php` file so it can connect.
+**This extension has been tested with MyBB v1.8.19 and Flarum v0.1.0-beta.8**
 
-When this is done, you only need to put these files to the <u>public folder of your Flarum installation</u>.
-This is because Flarum uses [the s9e TextFormatter](https://github.com/s9e/TextFormatter) and the script uses it too to parse and save the content of the mybb posts.
-At last but not least browse to `www.mywebsite.com/myflarumforum/mybb_to_flarum.php` and let it do its job.
+Execute this command in the root of your flarum installation: `composer require michaelbelgium/mybb-to-flarum`. Navigate to your admin panel, enable the extension and you get a new link in the admin navigation bar.
 
 ## Important notes
-* If u specify u want to migrate avatars then your (old) <u>MyBB forum is required also.</u>
-* To be able to migrate private messages you need the extension [flagrow/byobu](https://github.com/flagrow/byobu)
-* To get the SIZE-tag to work you'll need to edit the Flarum BBcode extension **FIRST** (before running the script) by replacing a line (see below) in `vendor/flarum/flarum-ext-bbcode/src/Listener/FormatBBCode.php` and then **re-enabling** the BBcode extension in administration panel
-
-```PHP
-//Replace:
-$event->configurator->BBCodes->addFromRepository('SIZE');
-//With:
-$event->configurator->BBCodes->addCustom('[size={CHOICE=large,small,xx-small,x-small,medium,x-large,xx-large}]{TEXT}[/size]','<span style="font-size:{CHOICE}">{TEXT}</span>');
-```
-
-* forums with a redirect hyperlink are skipped. Flarum doesn't support them (yet).
+* If u specify u want to migrate avatars then a path to your <u>MyBB forum is required also.</u>
+* Forums with a redirect hyperlink are skipped. Flarum doesn't support them (yet).
+* The core BBcode extension should be enabled too.

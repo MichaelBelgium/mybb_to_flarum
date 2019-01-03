@@ -1,0 +1,28 @@
+mybbtoflarum:
+  admin:
+    nav:
+      title: MyBB to Flarum
+      description: Convert a MyBB forum into this Flarum instance
+    page:
+      text: Convert a Mybb forum into this Flarum instance. Fill in the required data, aftwards click on "migrate".
+      btnConvert: Migrate
+      form:
+        general:
+          title: General settings
+          migrateAvatars: Migrate avatars
+          migrateSoftThreads: Migrate soft deleted threads
+          migrateSoftPosts: Migrate soft deleted posts
+        mybb:
+          title: MyBB settings
+          host: Database host
+          user: Database user
+          password: Database password
+          db: Database name
+          prefix: Table prefix
+          mybbPath: Absolute MyBB path
+        options:
+          title: General migrate options
+          migrateUsers: Migrate users
+          migrateThreadsPosts: Migrate threads and posts
+          migrateUserGroups: Migrate user groups
+          migrateCategories: Migrate categories
