@@ -19,7 +19,7 @@ class Migrator
 
 	public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '') 
 	{
-		$this->connection = mysqli_connect($host, $user, $password, $db);
+		$this->connection = new \mysqli($host, $user, $password, $db);
 		$this->db_prefix = $prefix;
 		$this->mybb_path = $mybbPath;
 	}
@@ -27,7 +27,7 @@ class Migrator
 	function __destruct() 
 	{
 		if(!is_null($this->getMybbConnection()))
-        	mysqli_close($this->getMybbConnection());
+			$this->getMybbConnection()->close();
     }
 
 	public function migrateUserGroups()
@@ -84,11 +84,7 @@ class Migrator
 					{
 						if(copy($fullpath,self::FLARUM_AVATAR_PATH.$avatar))
 							$newUser->changeAvatarPath($avatar);
-						// else
-						// 	echo "Warning: could not copy avatar of user id {$row->uid}";
 					}
-					// else
-					// 	echo "Warning: avatar of user id {$row->uid} doesn't exist in the mybb avatar path<br />";
 				}
 
 				$newUser->save();
