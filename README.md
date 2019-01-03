@@ -25,13 +25,4 @@ At last but not least browse to `www.mywebsite.com/myflarumforum/mybb_to_flarum.
 ## Important notes
 * If u specify u want to migrate avatars then your (old) <u>MyBB forum is required also.</u>
 * To be able to migrate private messages you need the extension [flagrow/byobu](https://github.com/flagrow/byobu)
-* To get the SIZE-tag to work you'll need to edit the Flarum BBcode extension **FIRST** (before running the script) by replacing a line (see below) in `vendor/flarum/flarum-ext-bbcode/src/Listener/FormatBBCode.php` and then **re-enabling** the BBcode extension in administration panel
-
-```PHP
-//Replace:
-$event->configurator->BBCodes->addFromRepository('SIZE');
-//With:
-$event->configurator->BBCodes->addCustom('[size={CHOICE=large,small,xx-small,x-small,medium,x-large,xx-large}]{TEXT}[/size]','<span style="font-size:{CHOICE}">{TEXT}</span>');
-```
-
 * forums with a redirect hyperlink are skipped. Flarum doesn't support them (yet).
