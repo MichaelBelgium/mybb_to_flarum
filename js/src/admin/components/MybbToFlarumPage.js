@@ -48,12 +48,11 @@ export default class MybbToFlarumPage extends Page {
 
 											if(value)
 											{
+												this.migrateUsers(value);
 												$("input[name=mybbPath]").removeAttr("disabled");
 											}
 											else
-											{
 												$("input[name=mybbPath]").attr("disabled", "disabled");
-											}
 										},
 										children: app.translator.trans('mybbtoflarum.admin.page.form.general.migrateAvatars'),
 									}),
