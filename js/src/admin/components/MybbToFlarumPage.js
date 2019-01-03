@@ -8,7 +8,7 @@ export default class MybbToFlarumPage extends Page {
 	init() {
 		super.init();
 		
-		this.migrateAvatars = m.prop(false);
+		this.migrateAvatars = m.prop(true);
 		this.migrateSoftThreads = m.prop(false);
 		this.migrateSoftPosts = m.prop(false);
 
@@ -83,7 +83,7 @@ export default class MybbToFlarumPage extends Page {
 									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.prefix')}</div>,
 									<input className="FormControl" type="text" bidi={this.mybb.prefix} value={this.mybb.prefix()} />,
 									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.mybbPath')}</div>,
-									<input className="FormControl" type="text" bidi={this.mybb.mybbPath} name="mybbPath" placeholder="/path/to/mybb" disabled />
+									<input className="FormControl" type="text" bidi={this.mybb.mybbPath} name="mybbPath" placeholder="/path/to/mybb" />
 								]
 							})}
 
@@ -92,7 +92,12 @@ export default class MybbToFlarumPage extends Page {
 								children: [
 									Switch.component({
 										state: this.migrateUsers(),
-										onchange: this.migrateUsers,
+										onchange: (value) => {
+											this.migrateUsers(value);
+
+											if(!value)
+												this.migrateAvatars(value);
+										},
 										children: app.translator.trans('mybbtoflarum.admin.page.form.options.migrateUsers'),
 									}),
 									Switch.component({
