@@ -15,10 +15,11 @@ In your admin panel you can choose what to migrate.
 
 ## Installation
 
-**This extension has been tested with: MyBB v1.8.19 and Flarum v0.1.0-beta.8+**
+**This extension has been tested with MyBB v1.8.19 and Flarum v0.1.0-beta.8**
 
 Execute this command in the root of your flarum installation: `composer require michaelbelgium/mybb-to-flarum`. Navigate to your admin panel, enable the extension and you get a new link in the admin navigation bar.
 
 ## Important notes
-* If u specify u want to migrate avatars then your (old) <u>MyBB forum is required also.</u>
+* If u specify u want to migrate avatars then a path to your <u>MyBB forum is required also.</u>
 * Forums with a redirect hyperlink are skipped. Flarum doesn't support them (yet).
+* The core BBcode extension should be enabled too.

@@ -20,7 +20,7 @@ return [
 
 	(new Formatter)->configure(function (Configurator $config) {
 		$config->BBCodes->delete("SIZE");
-        $config->BBCodes->addFromRepository('ALIGN');
+		$config->BBCodes->addFromRepository('ALIGN');
 		$config->BBCodes->addFromRepository('HR');
 		$config->BBCodes->addCustom('[size={CHOICE=large,small,xx-small,x-small,medium,x-large,xx-large}]{TEXT}[/size]','<span style="font-size:{CHOICE}">{TEXT}</span>');
 	})
