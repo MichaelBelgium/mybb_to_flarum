@@ -178,7 +178,7 @@ export default class MybbToFlarumPage extends Page {
 					doGroups: this.migrateUserGroups(),
 					doCategories: this.migrateCategories()
 				}
-			}).then(data => console.log(data));
+			}).then(data => alert(data.message));
 		});
 
 		this.loading = false;

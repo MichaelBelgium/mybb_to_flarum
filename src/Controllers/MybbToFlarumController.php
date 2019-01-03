@@ -22,7 +22,7 @@ class MybbToFlarumController implements RequestHandlerInterface
 
     public function handle(Request $request): Response
     {
-        $response = ["error" => false, "message" => "[done] migrating"];
+        $response = ["error" => false, "message" => ""];
 
         $migrate_avatars = array_get($request->getParsedBody(), 'avatars');
         $migrate_softposts = array_get($request->getParsedBody(), 'softposts');
@@ -55,6 +55,9 @@ class MybbToFlarumController implements RequestHandlerInterface
             if($doThreadsPosts)
                 $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts);
 
+            $counts = $migrator->getProcessedCount();
+
+            $response["message"] = "Migration successful: {$counts["users"]} users, {$counts["groups"]} user groups, {$counts["categories"]} categories, {$counts["discussions"]} discussions, {$counts["posts"]} posts ";
         } catch (Exception $e) {
             $response["error"] = true;
             $response["message"] = $e->getMessage();

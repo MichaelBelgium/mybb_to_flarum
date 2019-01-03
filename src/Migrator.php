@@ -14,6 +14,13 @@ class Migrator
 	private $connection;
 	private $db_prefix;
 	private $mybb_path;
+	private $count = [
+		"users" => 0,
+		"groups" => 0,
+		"categories" => 0,
+		"discussions" => 0,
+		"posts" => 0
+	];
 
 	const FLARUM_AVATAR_PATH = "assets/avatars/";
 
@@ -48,6 +55,8 @@ class Migrator
 				$group->color = $this->generateRandomColor();
 
 				$group->save();
+
+				$this->count["groups"]++;
 			}
 		}
 	}
@@ -100,6 +109,8 @@ class Migrator
 						$newUser->groups()->save(Group::find($group));
 					}
 				}
+
+				$this->count["users"]++;
 			}
 		}
 
@@ -127,6 +138,8 @@ class Migrator
 					$tag->parent()->associate(Tag::find($row->pid));
 
 				$tag->save();
+
+				$this->count["categories"]++;
 			}
 		}
 	}
@@ -160,6 +173,8 @@ class Migrator
 				$discussion->is_sticky = $trow->sticky;
 
 				$discussion->save();
+
+				$this->count["discussions"]++;
 
 				if(!in_array($trow->uid, $usersToRefresh))
 					$usersToRefresh[] = $trow->uid;
@@ -199,6 +214,8 @@ class Migrator
 
 					if(!in_array($prow->uid, $usersToRefresh))
 						$usersToRefresh[] = $prow->uid;
+
+					$this->count["posts"]++;					
 				}
 
 				$discussion->setFirstPost($firstPost);
@@ -271,5 +288,10 @@ class Migrator
 		$count = Discussion::where('slug', 'LIKE', $slug . '%')->get()->count();
 
 		return $slug . ($count > 0 ? "-$count": "");
+	}
+
+	public function getProcessedCount()
+	{
+		return $this->count;
 	}
 }
