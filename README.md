@@ -2,6 +2,8 @@
 
 This is a [Flarum](https://flarum.org/) extension to migrate data from a mybb forum to a fresh flarum instance.
 
+![image admin section](http://puu.sh/CrA3x.png)
+
 ## What can it migrate?
 
 In your admin panel you can choose what to migrate.
