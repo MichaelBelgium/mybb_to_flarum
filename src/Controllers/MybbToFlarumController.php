@@ -15,11 +15,23 @@ class MybbToFlarumController implements RequestHandlerInterface
      */
     protected $settings;
 
+    /**
+     * MybbToFlarumController constructor
+     *
+     * @param SettingsRepositoryInterface $settings
+     */
     public function __construct(SettingsRepositoryInterface $settings)
     {
         $this->settings = $settings;
     }
 
+    /**
+     * Handle the post request
+     *
+     * @param Request $request
+     *
+     * @return Response
+     */
     public function handle(Request $request): Response
     {
         $response = ["error" => false, "message" => ""];
@@ -57,7 +69,7 @@ class MybbToFlarumController implements RequestHandlerInterface
 
             $counts = $migrator->getProcessedCount();
 
-            $response["message"] = "Migration successful: {$counts["users"]} users, {$counts["groups"]} user groups, {$counts["categories"]} categories, {$counts["discussions"]} discussions, {$counts["posts"]} posts ";
+            $response["message"] = "Migration successful: {$counts["users"]} users, {$counts["groups"]} user groups, {$counts["categories"]} categories, {$counts["discussions"]} discussions, {$counts["posts"]} posts";
         } catch (Exception $e) {
             $response["error"] = true;
             $response["message"] = $e->getMessage();

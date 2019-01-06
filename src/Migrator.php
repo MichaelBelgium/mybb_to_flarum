@@ -9,6 +9,11 @@ use Flarum\Post\CommentPost;
 use Flarum\Post\Post;
 use Flarum\Util\Str;
 
+/**
+ * Migrator class
+ * 
+ * Connects to a mybb forum and migrates different elements
+ */
 class Migrator
 {
 	private $connection;
@@ -24,6 +29,16 @@ class Migrator
 
 	const FLARUM_AVATAR_PATH = "assets/avatars/";
 
+	/**
+	 * Migrator constructor
+	 *
+	 * @param string $host
+	 * @param string $user 		
+	 * @param string $password
+	 * @param string $db
+	 * @param string $prefix
+	 * @param string $mybbPath
+	 */
 	public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '') 
 	{
 		$this->connection = new \mysqli($host, $user, $password, $db);
@@ -35,8 +50,11 @@ class Migrator
 	{
 		if(!is_null($this->getMybbConnection()))
 			$this->getMybbConnection()->close();
-    }
+	}
 
+	/**
+	 * Migrate custom user groups
+	 */
 	public function migrateUserGroups()
 	{
 		$groups = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}usergroups WHERE type = 2");
@@ -61,6 +79,12 @@ class Migrator
 		}
 	}
 
+	/**
+	 * Migrate users with their avatars and link them to their group(s)
+	 *
+	 * @param bool $migrateAvatars 
+	 * @param bool $migrateWithUserGroups
+	 */
 	public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false)
 	{
 		$this->disableForeignKeyChecks();
@@ -68,7 +92,7 @@ class Migrator
 		$users = $this->getMybbConnection()->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM {$this->getPrefix()}users");
 		
 		if($users->num_rows > 0)
-    	{
+		{
 			User::truncate();
 
 			while($row = $users->fetch_object())
@@ -117,6 +141,9 @@ class Migrator
 		$this->enableForeignKeyChecks();
 	}
 
+	/**
+	 * Transform/migrate categories and forums into tags
+	 */
 	public function migrateCategories()
 	{
 		$categories = $this->getMybbConnection()->query("SELECT fid, name, description, linkto, disporder, pid FROM {$this->getPrefix()}forums order by fid");
@@ -144,6 +171,14 @@ class Migrator
 		}
 	}
 
+	/**
+	 * Migrate threads and their posts
+	 *
+	 * @param bool $migrateWithUsers Link with migrated users
+	 * @param bool $migrateWithCategories Link with migrated categories
+	 * @param bool $migrateSoftDeletedThreads Migrate also soft deleted threads from mybb
+	 * @param bool $migrateSoftDeletePosts Migrate also soft deleted posts from mybb
+	 */
 	public function migrateDiscussions(bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
 	{
 		$threads = $this->getMybbConnection()->query("SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM {$this->getPrefix()}threads");
@@ -249,6 +284,11 @@ class Migrator
 		app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 0');
 	}
 
+	/**
+	 * Generate a random color
+	 *
+	 * @return string
+	 */
 	private function generateRandomColor(): string
 	{
 		return '#' . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
