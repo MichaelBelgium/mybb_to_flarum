@@ -1,5 +1,5 @@
 <?php
-namespace michaelbelgium\mybbtoflarum;
+namespace Michaelbelgium\Mybbtoflarum;
 
 use Flarum\User\User;
 use Flarum\Tags\Tag;

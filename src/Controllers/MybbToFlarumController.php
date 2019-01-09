@@ -1,7 +1,7 @@
 <?php
-namespace michaelbelgium\mybbtoflarum\controllers;
+namespace Michaelbelgium\Mybbtoflarum\Controllers;
 
-use michaelbelgium\mybbtoflarum\Migrator;
+use Michaelbelgium\Mybbtoflarum\Migrator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface;
