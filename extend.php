@@ -5,7 +5,7 @@ use Flarum\Extend\Locales;
 use Flarum\Extend\Routes;
 use Flarum\Extend\Frontend;
 use Flarum\Extend\Formatter;
-use michaelbelgium\mybbtoflarum\controllers\MybbToFlarumController;
+use Michaelbelgium\Mybbtoflarum\Controllers\MybbToFlarumController;
 use s9e\TextFormatter\Configurator;
 
 return [
