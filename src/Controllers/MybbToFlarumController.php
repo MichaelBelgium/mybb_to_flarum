@@ -69,7 +69,7 @@ class MybbToFlarumController implements RequestHandlerInterface
 
             $counts = $migrator->getProcessedCount();
 
-            $response["message"] = "Migration successful: {$counts["users"]} users, {$counts["groups"]} user groups, {$counts["categories"]} categories, {$counts["discussions"]} discussions, {$counts["posts"]} posts";
+            $response["message"] = "Migration successful\n\n• {$counts["users"]} users\n• {$counts["groups"]} user groups\n• {$counts["categories"]} categories\n• {$counts["discussions"]} discussions\n• {$counts["posts"]} posts";
         } catch (Exception $e) {
             $response["error"] = true;
             $response["message"] = $e->getMessage();

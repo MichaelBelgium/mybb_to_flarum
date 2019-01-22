@@ -65,13 +65,8 @@ class Migrator
 
 			while($row = $groups->fetch_object())
 			{
-				$group = new Group();
-			
+				$group = Group::build($row->title, $row->title, $this->generateRandomColor(), null);
 				$group->id = $row->gid;
-				$group->name_singular = $row->title;
-				$group->name_plural = $row->title;
-				$group->color = $this->generateRandomColor();
-
 				$group->save();
 
 				$this->count["groups"]++;
@@ -82,7 +77,7 @@ class Migrator
 	/**
 	 * Migrate users with their avatars and link them to their group(s)
 	 *
-	 * @param bool $migrateAvatars 
+	 * @param bool $migrateAvatars
 	 * @param bool $migrateWithUserGroups
 	 */
 	public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false)
@@ -124,12 +119,19 @@ class Migrator
 
 				if($migrateWithUserGroups)
 				{
-					$userGroups = explode(",", $row->additionalgroups);
-					$userGroups[] = (int)$row->usergroup;
+					$userGroups = [(int)$row->usergroup];
+
+					if(!empty($row->additionalgroups))
+					{
+						$userGroups = array_merge(
+							$userGroups, 
+							array_map("intval", explode(",", $row->additionalgroups))
+						);
+					}
 
 					foreach($userGroups as $group)
 					{
-						if((int)$group <= 7) continue;
+						if($group <= 7) continue;
 						$newUser->groups()->save(Group::find($group));
 					}
 				}
