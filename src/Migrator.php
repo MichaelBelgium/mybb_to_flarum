@@ -106,13 +106,11 @@ class Migrator
 
 				if($migrateAvatars && !empty($this->getMybbPath()) && !empty($row->avatar))
 				{
-					$mybbAvatarPath = explode("?", $row->avatar)[0];
-
-					if (substr($mybbAvatarPath, 0 , 1) === '.') {
-						$mybbAvatarPath = substr($mybbAvatarPath, 1);
+					if (substr($this->getMybbPath(), strlen($this->getMybbPath())-1, 1) !== '/') {
+						$this->mybb_path = $this->getMybbPath().'/';
 					}
 
-					$fullpath = $this->getMybbPath().$mybbAvatarPath;
+					$fullpath = $this->getMybbPath().explode("?", $row->avatar)[0];
 					$avatar = basename($fullpath);
 
 					if(file_exists($fullpath))
