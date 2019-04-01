@@ -109,7 +109,6 @@ class Migrator
 				{
 					$fullpath = $this->getMybbPath().explode("?", $row->avatar)[0];
 					$avatar = basename($fullpath);
-
 					if(file_exists($fullpath))
 					{
 						if(copy($fullpath,self::FLARUM_AVATAR_PATH.$avatar))
