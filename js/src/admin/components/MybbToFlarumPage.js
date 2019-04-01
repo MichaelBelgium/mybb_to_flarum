@@ -164,7 +164,7 @@ export default class MybbToFlarumPage extends Page {
 			'mybb_password': this.mybb.password(),
 			'mybb_db': this.mybb.db(),
 			'mybb_prefix': this.mybb.prefix(),
-			'mybb_path': this.mybb.mybbPath()
+			'mybb_path': (this.mybb.mybbPath().endsWith('/') ? this.mybb.mybbPath() : this.mybb.mybbPath() + '/')
 		}).then(() => {
 			app.request({
 				method: 'POST',
