@@ -27,7 +27,7 @@ class Migrator
 		"posts" => 0
 	];
 
-	const FLARUM_AVATAR_PATH = "assets/avatars/";
+	const FLARUM_AVATAR_PATH = __DIR__ . "/../../../../public/assets/avatars/";
 
 	/**
 	 * Migrator constructor
@@ -106,8 +106,15 @@ class Migrator
 
 				if($migrateAvatars && !empty($this->getMybbPath()) && !empty($row->avatar))
 				{
-					$fullpath = $this->getMybbPath().explode("?", $row->avatar)[0];
+					$mybbAvatarPath = explode("?", $row->avatar)[0];
+
+					if (substr($mybbAvatarPath, 0 , 1) === '.') {
+						$mybbAvatarPath = substr($mybbAvatarPath, 1);
+					}
+
+					$fullpath = $this->getMybbPath().$mybbAvatarPath;
 					$avatar = basename($fullpath);
+
 					if(file_exists($fullpath))
 					{
 						if(copy($fullpath,self::FLARUM_AVATAR_PATH.$avatar))
