@@ -99,6 +99,7 @@ class Migrator
 				);
 
 				$newUser->activate();
+				$newUser->id = $row->uid;
 				$newUser->joined_at = $row->regdate;
 				$newUser->last_seen_at = $row->lastvisit;
 				$newUser->discussion_count = $row->threadnum;
