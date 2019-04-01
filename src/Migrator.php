@@ -107,10 +107,6 @@ class Migrator
 
 				if($migrateAvatars && !empty($this->getMybbPath()) && !empty($row->avatar))
 				{
-					if (substr($this->getMybbPath(), strlen($this->getMybbPath())-1, 1) !== '/') {
-						$this->mybb_path = $this->getMybbPath().'/';
-					}
-
 					$fullpath = $this->getMybbPath().explode("?", $row->avatar)[0];
 					$avatar = basename($fullpath);
 
