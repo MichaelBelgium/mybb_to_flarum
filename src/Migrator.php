@@ -42,6 +42,7 @@ class Migrator
 	public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '') 
 	{
 		$this->connection = new \mysqli($host, $user, $password, $db);
+		$this->connection->set_charset('utf8');
 		$this->db_prefix = $prefix;
 		$this->mybb_path = $mybbPath;
 	}
