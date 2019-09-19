@@ -145,7 +145,7 @@ export default class MybbToFlarumPage extends Page {
 		}
 
 		Object.keys(this.mybb).forEach(key => {
-			if(key !== 'mybbPath' && this.mybb[key]() === '')
+			if(key !== 'mybbPath' && key !== 'prefix' && this.mybb[key]() === '')
 			{
 				alert('Mybb: ' + key + ' can not be empty');
 				fail = true;
