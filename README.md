@@ -24,4 +24,5 @@ Execute this command in the root of your flarum installation: `composer require 
 ## Important notes
 * If u specify u want to migrate avatars then a path to your <u>MyBB forum is required also.</u>
 * Forums with a redirect hyperlink are skipped. Flarum doesn't support them (yet).
+* A guest who created a MyBB post or thread will appear as a deleted user in Flarum and not specifically a "guest".
 * The core BBcode extension should be enabled too.

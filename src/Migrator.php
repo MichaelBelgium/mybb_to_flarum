@@ -215,7 +215,7 @@ class Migrator
 
 				$this->count["discussions"]++;
 
-				if(!in_array($trow->uid, $usersToRefresh))
+				if(!in_array($trow->uid, $usersToRefresh) && $trow->uid != 0)
 					$usersToRefresh[] = $trow->uid;
 
 				$continue = true;
@@ -241,7 +241,9 @@ class Migrator
 				{
 					if(!$migrateSoftDeletePosts && $prow->visible == -1) continue;
 
-					$post = CommentPost::reply($discussion->id, $prow->message, $prow->uid, null);
+					$user = User::find($prow->uid);
+
+					$post = CommentPost::reply($discussion->id, $prow->message, optional($user)->id, null);
 					$post->created_at = $prow->dateline;
 					$post->is_approved = true;
 					$post->number = ++$number;
@@ -251,7 +253,7 @@ class Migrator
 					if(is_null($firstPost))
 						$firstPost = $post;
 
-					if(!in_array($prow->uid, $usersToRefresh))
+					if(!in_array($prow->uid, $usersToRefresh) && $user !== null)
 						$usersToRefresh[] = $prow->uid;
 
 					$this->count["posts"]++;					
