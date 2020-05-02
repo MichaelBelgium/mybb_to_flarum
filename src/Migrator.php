@@ -259,12 +259,16 @@ class Migrator
 					$this->count["posts"]++;					
 				}
 
-				$discussion->setFirstPost($firstPost);
-				$discussion->refreshCommentCount();
-				$discussion->refreshLastPost();
-				$discussion->refreshParticipantCount();
+                if (is_null($firstPost)) {
+                    $discussion->delete();
+                } else {
+                    $discussion->setFirstPost($firstPost);
+                    $discussion->refreshCommentCount();
+                    $discussion->refreshLastPost();
+                    $discussion->refreshParticipantCount();
 
-				$discussion->save();
+                    $discussion->save();
+                }
 			}
 
 			if($migrateWithUsers)
