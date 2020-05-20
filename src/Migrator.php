@@ -7,7 +7,7 @@ use Flarum\Group\Group;
 use Flarum\Discussion\Discussion;
 use Flarum\Post\CommentPost;
 use Flarum\Post\Post;
-use Flarum\Util\Str;
+use Illuminate\Support\Str;
 
 /**
  * Migrator class
