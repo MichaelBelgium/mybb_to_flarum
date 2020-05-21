@@ -32,14 +32,14 @@ export default class MybbToFlarumPage extends Page {
 			<div className="mybbtoflarumPage">
 				<div className="mybbtoflarumPage-header">
 					<div className="container">
-						{app.translator.trans('mybbtoflarum.admin.page.text')}
+						{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.description_text')}
 					</div>
 				</div>
 				<div className="mybbtoflarumPage-content">
 					<div className="container">
 						<form onsubmit={this.onsubmit.bind(this)}>
 							{FieldSet.component({
-								label: app.translator.trans('mybbtoflarum.admin.page.form.general.title'),
+								label: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.title'),
 								children: [
 									Switch.component({
 										state: this.migrateAvatars(),
@@ -54,41 +54,41 @@ export default class MybbToFlarumPage extends Page {
 											else
 												$("input[name=mybbPath]").attr("disabled", "disabled");
 										},
-										children: app.translator.trans('mybbtoflarum.admin.page.form.general.migrateAvatars'),
+										children: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_avatars_label'),
 									}),
 									Switch.component({
 										state: this.migrateSoftThreads(),
 										onchange: this.migrateSoftThreads,
-										children: app.translator.trans('mybbtoflarum.admin.page.form.general.migrateSoftThreads'),
+										children: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_soft_threads_label'),
 									}),
 									Switch.component({
 										state: this.migrateSoftPosts(),
 										onchange: this.migrateSoftPosts,
-										children: app.translator.trans('mybbtoflarum.admin.page.form.general.migrateSoftPosts'),
+										children: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_soft_posts_label'),
 									})
 								]
 							})}
 
 							{FieldSet.component({
-								label: app.translator.trans('mybbtoflarum.admin.page.form.mybb.title'),
+								label: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.title'),
 								children: [
-									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.host')}</div>,
+									<div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.host_label')}</div>,
 									<input className="FormControl" type="text" bidi={this.mybb.host} value={this.mybb.host()} />,
-									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.user')}</div>,
+									<div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.user_label')}</div>,
 									<input className="FormControl" type="text" bidi={this.mybb.user} />,
-									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.password')}</div>,
+									<div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.password_label')}</div>,
 									<input className="FormControl" type="password" bidi={this.mybb.password} />,
-									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.db')}</div>,
+									<div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.db_label')}</div>,
 									<input className="FormControl" type="text" bidi={this.mybb.db} />,
-									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.prefix')}</div>,
+									<div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.prefix_label')}</div>,
 									<input className="FormControl" type="text" bidi={this.mybb.prefix} value={this.mybb.prefix()} />,
-									<div className="helpText">{app.translator.trans('mybbtoflarum.admin.page.form.mybb.mybbPath')}</div>,
+									<div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.path_label')}</div>,
 									<input className="FormControl" type="text" bidi={this.mybb.mybbPath} name="mybbPath" placeholder="/path/to/mybb" />
 								]
 							})}
 
 							{FieldSet.component({
-								label: app.translator.trans('mybbtoflarum.admin.page.form.options.title'),
+								label: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.title'),
 								children: [
 									Switch.component({
 										state: this.migrateUsers(),
@@ -100,22 +100,22 @@ export default class MybbToFlarumPage extends Page {
 												$("input[name=mybbPath]").attr("disabled", "disabled");
 											}
 										},
-										children: app.translator.trans('mybbtoflarum.admin.page.form.options.migrateUsers'),
+										children: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_users_label'),
 									}),
 									Switch.component({
 										state: this.migrateThreadsPosts(),
 										onchange: this.migrateThreadsPosts,
-										children: app.translator.trans('mybbtoflarum.admin.page.form.options.migrateThreadsPosts'),
+										children: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_threadsPosts_label'),
 									}),
 									Switch.component({
 										state: this.migrateUserGroups(),
 										onchange: this.migrateUserGroups,
-										children: app.translator.trans('mybbtoflarum.admin.page.form.options.migrateUserGroups'),
+										children: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_userGroups_label'),
 									}),
 									Switch.component({
 										state: this.migrateCategories(),
 										onchange: this.migrateCategories,
-										children: app.translator.trans('mybbtoflarum.admin.page.form.options.migrateCategories'),
+										children: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_categories_label'),
 									})
 								]
 							})}
@@ -124,7 +124,7 @@ export default class MybbToFlarumPage extends Page {
 								className: 'Button Button--danger',
 								icon: 'fas fa-exchange-alt',
 								type: 'submit',
-								children: app.translator.trans('mybbtoflarum.admin.page.btnConvert'),
+								children: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.convert_button'),
 								loading: this.loading
 							})}
 						</form>

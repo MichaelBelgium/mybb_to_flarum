@@ -11,8 +11,8 @@ app.initializers.add('michaelbelgium-mybb-to-flarum', () => {
 		items.add('pages', AdminLinkButton.component({
 			href: app.route('mybbtoflarum'),
 			icon: 'fas fa-exchange-alt',
-			children: app.translator.trans('mybbtoflarum.admin.nav.title'),
-			description: app.translator.trans('mybbtoflarum.admin.nav.description')
+			children: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.nav.title'),
+			description: app.translator.trans('michaelbelgium-mybb-to-flarum.admin.nav.description_text')
 		}));
 	});
 });
