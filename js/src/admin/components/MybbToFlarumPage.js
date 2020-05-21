@@ -95,8 +95,10 @@ export default class MybbToFlarumPage extends Page {
 										onchange: (value) => {
 											this.migrateUsers(value);
 
-											if(!value)
+											if(!value) {
 												this.migrateAvatars(value);
+												$("input[name=mybbPath]").attr("disabled", "disabled");
+											}
 										},
 										children: app.translator.trans('mybbtoflarum.admin.page.form.options.migrateUsers'),
 									}),
