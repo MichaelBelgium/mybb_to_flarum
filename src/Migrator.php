@@ -1,6 +1,7 @@
 <?php
 namespace Michaelbelgium\Mybbtoflarum;
 
+use Carbon\Carbon;
 use Flarum\User\User;
 use Flarum\Tags\Tag;
 use Flarum\Group\Group;
@@ -214,6 +215,8 @@ class Migrator
 				$discussion->is_approved = true;
 				$discussion->is_locked = $trow->closed == "1";
 				$discussion->is_sticky = $trow->sticky;
+				if($trow->visible == -1)
+					$discussion->hidden_at = Carbon::now();
 
 				$discussion->save();
 
@@ -256,6 +259,8 @@ class Migrator
 					$post->created_at = $prow->dateline;
 					$post->is_approved = true;
 					$post->number = ++$number;
+					if($prow->visible == -1)
+						$post->hidden_at = Carbon::now();
 
 					$post->save();
 
@@ -268,7 +273,9 @@ class Migrator
 					$this->count["posts"]++;					
 				}
 
-				$discussion->setFirstPost($firstPost);
+				if($firstPost !== null)
+					$discussion->setFirstPost($firstPost);
+				
 				$discussion->refreshCommentCount();
 				$discussion->refreshLastPost();
 				$discussion->refreshParticipantCount();
