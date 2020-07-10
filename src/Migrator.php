@@ -185,7 +185,13 @@ class Migrator
 	 */
 	public function migrateDiscussions(bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
 	{
-		$threads = $this->getMybbConnection()->query("SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM {$this->getPrefix()}threads");
+		$query = "SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM {$this->getPrefix()}threads";
+		if(!$migrateSoftDeletedThreads)
+		{
+			$query .= " WHERE visible != -1";
+		}
+
+		$threads = $this->getMybbConnection()->query($query);
 
 		if($threads->num_rows > 0)
 		{
@@ -195,8 +201,6 @@ class Migrator
 
 			while($trow = $threads->fetch_object())
 			{
-				if(!$migrateSoftDeletedThreads && $trow->visible == -1) continue;
-
 				$tag = Tag::find($trow->fid);
 
 				$discussion = new Discussion();
@@ -233,14 +237,19 @@ class Migrator
 					} while($continue);
 				}
 
-				$posts = $this->getMybbConnection()->query("SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message, visible FROM {$this->getPrefix()}posts WHERE tid = {$discussion->id} order by pid");
+				$query = "SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message, visible FROM {$this->getPrefix()}posts WHERE tid = {$discussion->id}";
+				if(!$migrateSoftDeletePosts)
+				{
+					$query .= " AND visible != -1";
+				}
+				$query .= " order by pid";
+
+				$posts = $this->getMybbConnection()->query($query);
 
 				$number = 0;
 				$firstPost = null;
 				while($prow = $posts->fetch_object())
 				{
-					if(!$migrateSoftDeletePosts && $prow->visible == -1) continue;
-
 					$user = User::find($prow->uid);
 
 					$post = CommentPost::reply($discussion->id, $prow->message, optional($user)->id, null);
@@ -250,7 +259,7 @@ class Migrator
 
 					$post->save();
 
-					if(is_null($firstPost))
+					if($firstPost === null)
 						$firstPost = $post;
 
 					if(!in_array($prow->uid, $usersToRefresh) && $user !== null)
