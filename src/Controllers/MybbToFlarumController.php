@@ -1,12 +1,14 @@
 <?php
 namespace Michaelbelgium\Mybbtoflarum\Controllers;
 
+use Exception;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface;
 use Flarum\Settings\SettingsRepositoryInterface;
-use Zend\Diactoros\Response\JsonResponse;
+use Illuminate\Support\Arr;
+use Laminas\Diactoros\Response\JsonResponse;
 
 class MybbToFlarumController implements RequestHandlerInterface
 {
@@ -36,14 +38,14 @@ class MybbToFlarumController implements RequestHandlerInterface
     {
         $response = ["error" => false, "message" => ""];
 
-        $migrate_avatars = array_get($request->getParsedBody(), 'avatars');
-        $migrate_softposts = array_get($request->getParsedBody(), 'softposts');
-        $migrate_softthreads = array_get($request->getParsedBody(), 'softthreads');
+        $migrate_avatars = Arr::get($request->getParsedBody(), 'avatars');
+        $migrate_softposts = Arr::get($request->getParsedBody(), 'softposts');
+        $migrate_softthreads = Arr::get($request->getParsedBody(), 'softthreads');
         
-        $doUsers = array_get($request->getParsedBody(), 'doUsers');
-        $doThreadsPosts = array_get($request->getParsedBody(), 'doThreadsPosts');
-        $doGroups = array_get($request->getParsedBody(), 'doGroups');
-        $doCategories = array_get($request->getParsedBody(), 'doCategories');
+        $doUsers = Arr::get($request->getParsedBody(), 'doUsers');
+        $doThreadsPosts = Arr::get($request->getParsedBody(), 'doThreadsPosts');
+        $doGroups = Arr::get($request->getParsedBody(), 'doGroups');
+        $doCategories = Arr::get($request->getParsedBody(), 'doCategories');
 
         try {
             $migrator = new Migrator(
