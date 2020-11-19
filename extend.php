@@ -1,10 +1,12 @@
 <?php
 
 use Illuminate\Contracts\View\Factory;
+use Flarum\Extend\Console;
 use Flarum\Extend\Locales;
 use Flarum\Extend\Routes;
 use Flarum\Extend\Frontend;
 use Flarum\Extend\Formatter;
+use Michaelbelgium\Mybbtoflarum\Commands\MybbToFlarumCommand;
 use Michaelbelgium\Mybbtoflarum\Controllers\MybbToFlarumController;
 use s9e\TextFormatter\Configurator;
 
@@ -23,5 +25,6 @@ return [
 		$config->BBCodes->addFromRepository('ALIGN');
 		$config->BBCodes->addFromRepository('HR');
 		$config->BBCodes->addCustom('[size={CHOICE=large,small,xx-small,x-small,medium,x-large,xx-large}]{TEXT}[/size]','<span style="font-size:{CHOICE}">{TEXT}</span>');
-	})
+	}),
+    (new Console())->command(MybbToFlarumCommand::class)
 ];
