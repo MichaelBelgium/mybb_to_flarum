@@ -1,359 +1,309 @@
 <?php
+
 namespace Michaelbelgium\Mybbtoflarum;
 
 use Carbon\Carbon;
-use Flarum\User\User;
-use Flarum\Tags\Tag;
-use Flarum\Group\Group;
 use Flarum\Discussion\Discussion;
+use Flarum\Group\Group;
 use Flarum\Post\CommentPost;
 use Flarum\Post\Post;
+use Flarum\Tags\Tag;
+use Flarum\User\User;
 use Illuminate\Support\Str;
 
 /**
  * Migrator class
- * 
+ *
  * Connects to a mybb forum and migrates different elements
  */
 class Migrator
 {
-	private $connection;
-	private $db_prefix;
-	private $mybb_path;
-	private $count = [
-		"users" => 0,
-		"groups" => 0,
-		"categories" => 0,
-		"discussions" => 0,
-		"posts" => 0
-	];
+    const FLARUM_AVATAR_PATH = "assets/avatars/";
+    private $connection;
+    private $db_prefix;
+    private $mybb_path;
+    private $count = [
+        "users" => 0,
+        "groups" => 0,
+        "categories" => 0,
+        "discussions" => 0,
+        "posts" => 0
+    ];
+    /**
+     * @var MyBBExtractor
+     */
+    private $extractor;
 
-	const FLARUM_AVATAR_PATH = "assets/avatars/";
+    /**
+     * Migrator constructor
+     *
+     * @param string $host
+     * @param string $user
+     * @param string $password
+     * @param string $db
+     * @param string $prefix
+     * @param string $mybbPath
+     */
+    public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '')
+    {
+        $this->extractor = new MyBBExtractor($host, $user, $password, $db, $prefix, $mybbPath);
+    }
 
-	/**
-	 * Migrator constructor
-	 *
-	 * @param string $host
-	 * @param string $user 		
-	 * @param string $password
-	 * @param string $db
-	 * @param string $prefix
-	 * @param string $mybbPath
-	 */
-	public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '') 
-	{
-		$this->connection = new \mysqli($host, $user, $password, $db);
-		$this->connection->set_charset('utf8');
-		$this->db_prefix = $prefix;
-		$this->mybb_path = $mybbPath;
-	}
+    /**
+     * Migrate custom user groups
+     */
+    public function migrateUserGroups()
+    {
+        $groups = $this->extractor->getGroups();
 
-	function __destruct() 
-	{
-		if(!is_null($this->getMybbConnection()))
-			$this->getMybbConnection()->close();
-	}
+        if ($groups->num_rows > 0) {
+            Group::where('id', '>', '4')->delete();
 
-	/**
-	 * Migrate custom user groups
-	 */
-	public function migrateUserGroups()
-	{
-		$groups = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}usergroups WHERE type = 2");
+            while ($row = $groups->fetch_object()) {
+                $group = Group::build($row->title, $row->title, $this->generateRandomColor(), null);
+                $group->id = $row->gid;
+                $group->save();
 
-		if($groups->num_rows > 0)
-		{
-			Group::where('id', '>', '4')->delete();
+                $this->count["groups"]++;
+            }
+        }
+    }
 
-			while($row = $groups->fetch_object())
-			{
-				$group = Group::build($row->title, $row->title, $this->generateRandomColor(), null);
-				$group->id = $row->gid;
-				$group->save();
+    /**
+     * Generate a random color
+     *
+     * @return string
+     */
+    private function generateRandomColor(): string
+    {
+        return '#' . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
+    }
 
-				$this->count["groups"]++;
-			}
-		}
-	}
+    /**
+     * Migrate users with their avatars and link them to their group(s)
+     *
+     * @param bool $migrateAvatars
+     * @param bool $migrateWithUserGroups
+     */
+    public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false)
+    {
+        $this->disableForeignKeyChecks();
 
-	/**
-	 * Migrate users with their avatars and link them to their group(s)
-	 *
-	 * @param bool $migrateAvatars
-	 * @param bool $migrateWithUserGroups
-	 */
-	public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false)
-	{
-		$this->disableForeignKeyChecks();
-		
-		$users = $this->getMybbConnection()->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM {$this->getPrefix()}users");
-		
-		if($users->num_rows > 0)
-		{
-			User::truncate();
+        $users = $this->extractor->getUsers();
 
-			while($row = $users->fetch_object())
-			{
-				$newUser = User::register(
-					$row->username, 
-					$row->email, 
-					password_hash(time(), PASSWORD_BCRYPT)
-				);
+        if ($users->num_rows > 0) {
+            User::truncate();
 
-				$newUser->activate();
-				$newUser->id = $row->uid;
-				$newUser->joined_at = $row->regdate;
-				$newUser->last_seen_at = $row->lastvisit;
-				$newUser->discussion_count = $row->threadnum;
-				$newUser->comment_count = $row->postnum;
+            while ($row = $users->fetch_object()) {
+                $newUser = User::register(
+                    $row->username,
+                    $row->email,
+                    password_hash(time(), PASSWORD_BCRYPT)
+                );
 
-				if($migrateAvatars && !empty($this->getMybbPath()) && !empty($row->avatar))
-				{
-					$fullpath = $this->getMybbPath().explode("?", $row->avatar)[0];
-					$avatar = basename($fullpath);
-					if(file_exists($fullpath))
-					{
-						if(copy($fullpath,self::FLARUM_AVATAR_PATH.$avatar))
-							$newUser->changeAvatarPath($avatar);
-					}
-				}
+                $newUser->activate();
+                $newUser->id = $row->uid;
+                $newUser->joined_at = $row->regdate;
+                $newUser->last_seen_at = $row->lastvisit;
+                $newUser->discussion_count = $row->threadnum;
+                $newUser->comment_count = $row->postnum;
 
-				$newUser->save();
+                if ($migrateAvatars && !empty($this->getMybbPath()) && !empty($row->avatar)) {
+                    $fullpath = $this->getMybbPath() . explode("?", $row->avatar)[0];
+                    $avatar = basename($fullpath);
+                    if (file_exists($fullpath)) {
+                        if (copy($fullpath, self::FLARUM_AVATAR_PATH . $avatar))
+                            $newUser->changeAvatarPath($avatar);
+                    }
+                }
 
-				if($migrateWithUserGroups)
-				{
-					$userGroups = [(int)$row->usergroup];
+                $newUser->save();
 
-					if(!empty($row->additionalgroups))
-					{
-						$userGroups = array_merge(
-							$userGroups, 
-							array_map("intval", explode(",", $row->additionalgroups))
-						);
-					}
+                if ($migrateWithUserGroups) {
+                    $userGroups = [(int)$row->usergroup];
 
-					foreach($userGroups as $group)
-					{
-						if($group <= 7) continue;
-						$newUser->groups()->save(Group::find($group));
-					}
-				}
+                    if (!empty($row->additionalgroups)) {
+                        $userGroups = array_merge(
+                            $userGroups,
+                            array_map("intval", explode(",", $row->additionalgroups))
+                        );
+                    }
 
-				$this->count["users"]++;
-			}
-		}
+                    foreach ($userGroups as $group) {
+                        if ($group <= 7) continue;
+                        $newUser->groups()->save(Group::find($group));
+                    }
+                }
 
-		$this->enableForeignKeyChecks();
-	}
+                $this->count["users"]++;
+            }
+        }
 
-	/**
-	 * Transform/migrate categories and forums into tags
-	 */
-	public function migrateCategories()
-	{
-		$categories = $this->getMybbConnection()->query("SELECT fid, name, description, linkto, disporder, pid FROM {$this->getPrefix()}forums order by fid");
+        $this->enableForeignKeyChecks();
+    }
 
-		if($categories->num_rows > 0)
-		{
-			Tag::getQuery()->delete();
+    private function disableForeignKeyChecks()
+    {
+        app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 0');
+    }
 
-			while($row = $categories->fetch_object())
-			{
-				if(!empty($row->linkto)) continue; //forums with links are not supported in flarum
+    private function getMybbPath(): string
+    {
+        return $this->mybb_path;
+    }
 
-				$tag = Tag::build($row->name, $this->slugTag($row->name), $row->description, $this->generateRandomColor(), null, false);
+    private function enableForeignKeyChecks()
+    {
+        app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 1');
+    }
 
-				$tag->id = $row->fid;
-				$tag->position = (int)$row->disporder - 1;
+    /**
+     * Transform/migrate categories and forums into tags
+     */
+    public function migrateCategories()
+    {
+        $categories = $this->extractor->getCategories();
 
-				if($row->pid != 0)
-					$tag->parent()->associate(Tag::find($row->pid));
+        if ($categories->num_rows > 0) {
+            Tag::getQuery()->delete();
 
-				$tag->save();
+            while ($row = $categories->fetch_object()) {
+                if (!empty($row->linkto)) continue; //forums with links are not supported in flarum
 
-				$this->count["categories"]++;
-			}
-		}
-	}
+                $tag = Tag::build($row->name, $this->slugTag($row->name), $row->description, $this->generateRandomColor(), null, false);
 
-	/**
-	 * Migrate threads and their posts
-	 *
-	 * @param bool $migrateWithUsers Link with migrated users
-	 * @param bool $migrateWithCategories Link with migrated categories
-	 * @param bool $migrateSoftDeletedThreads Migrate also soft deleted threads from mybb
-	 * @param bool $migrateSoftDeletePosts Migrate also soft deleted posts from mybb
-	 */
-	public function migrateDiscussions(bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
-	{
-		$query = "SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM {$this->getPrefix()}threads";
-		if(!$migrateSoftDeletedThreads)
-		{
-			$query .= " WHERE visible != -1";
-		}
+                $tag->id = $row->fid;
+                $tag->position = (int)$row->disporder - 1;
 
-		$threads = $this->getMybbConnection()->query($query);
+                if ($row->pid != 0)
+                    $tag->parent()->associate(Tag::find($row->pid));
 
-		if($threads->num_rows > 0)
-		{
-			Discussion::getQuery()->delete();
-			Post::getQuery()->delete();
-			$usersToRefresh = [];
+                $tag->save();
 
-			while($trow = $threads->fetch_object())
-			{
-				$tag = Tag::find($trow->fid);
+                $this->count["categories"]++;
+            }
+        }
+    }
 
-				$discussion = new Discussion();
-				$discussion->id = $trow->tid;
-				$discussion->title = $trow->subject;
+    private function slugTag(string $value)
+    {
+        $slug = Str::slug($value);
+        $count = Tag::where('slug', 'LIKE', $slug . '%')->get()->count();
 
-				if($migrateWithUsers)
-					$discussion->user()->associate(User::find($trow->uid));
-				
-				$discussion->slug = $this->slugDiscussion($trow->subject);
-				$discussion->is_approved = true;
-				$discussion->is_locked = $trow->closed == "1";
-				$discussion->is_sticky = $trow->sticky;
-				if($trow->visible == -1)
-					$discussion->hidden_at = Carbon::now();
+        return $slug . ($count > 0 ? "-$count" : "");
+    }
 
-				$discussion->save();
+    /**
+     * Migrate threads and their posts
+     *
+     * @param bool $migrateWithUsers Link with migrated users
+     * @param bool $migrateWithCategories Link with migrated categories
+     * @param bool $migrateSoftDeletedThreads Migrate also soft deleted threads from mybb
+     * @param bool $migrateSoftDeletePosts Migrate also soft deleted posts from mybb
+     */
+    public function migrateDiscussions(bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
+    {
+        $threads = $this->extractor->getThreads($migrateSoftDeletedThreads);
 
-				$this->count["discussions"]++;
+        if ($threads->num_rows > 0) {
+            Discussion::getQuery()->delete();
+            Post::getQuery()->delete();
+            $usersToRefresh = [];
 
-				if(!in_array($trow->uid, $usersToRefresh) && $trow->uid != 0)
-					$usersToRefresh[] = $trow->uid;
+            while ($trow = $threads->fetch_object()) {
+                $tag = Tag::find($trow->fid);
 
-				$continue = true;
+                $discussion = new Discussion();
+                $discussion->id = $trow->tid;
+                $discussion->title = $trow->subject;
 
-				if(!is_null($tag) && $migrateWithCategories)
-				{
-					do {
-						$tag->discussions()->save($discussion);
-	
-						if(is_null($tag->parent_id))
-							$continue = false;
-						else
-							$tag = Tag::find($tag->parent_id);
-						
-					} while($continue);
-				}
+                if ($migrateWithUsers)
+                    $discussion->user()->associate(User::find($trow->uid));
 
-				$query = "SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message, visible FROM {$this->getPrefix()}posts WHERE tid = {$discussion->id}";
-				if(!$migrateSoftDeletePosts)
-				{
-					$query .= " AND visible != -1";
-				}
-				$query .= " order by pid";
+                $discussion->slug = $this->slugDiscussion($trow->subject);
+                $discussion->is_approved = true;
+                $discussion->is_locked = $trow->closed == "1";
+                $discussion->is_sticky = $trow->sticky;
+                if ($trow->visible == -1)
+                    $discussion->hidden_at = Carbon::now();
 
-				$posts = $this->getMybbConnection()->query($query);
+                $discussion->save();
 
-				$number = 0;
-				$firstPost = null;
-				while($prow = $posts->fetch_object())
-				{
-					$user = User::find($prow->uid);
+                $this->count["discussions"]++;
 
-					$post = CommentPost::reply($discussion->id, $prow->message, optional($user)->id, null);
-					$post->created_at = $prow->dateline;
-					$post->is_approved = true;
-					$post->number = ++$number;
-					if($prow->visible == -1)
-						$post->hidden_at = Carbon::now();
+                if (!in_array($trow->uid, $usersToRefresh) && $trow->uid != 0)
+                    $usersToRefresh[] = $trow->uid;
 
-					$post->save();
+                $continue = true;
 
-					if($firstPost === null)
-						$firstPost = $post;
+                if (!is_null($tag) && $migrateWithCategories) {
+                    do {
+                        $tag->discussions()->save($discussion);
 
-					if(!in_array($prow->uid, $usersToRefresh) && $user !== null)
-						$usersToRefresh[] = $prow->uid;
+                        if (is_null($tag->parent_id))
+                            $continue = false;
+                        else
+                            $tag = Tag::find($tag->parent_id);
 
-					$this->count["posts"]++;					
-				}
+                    } while ($continue);
+                }
 
-				if($firstPost !== null)
-					$discussion->setFirstPost($firstPost);
-				
-				$discussion->refreshCommentCount();
-				$discussion->refreshLastPost();
-				$discussion->refreshParticipantCount();
+                $posts = $this->extractor->getPosts($discussion->id, $migrateSoftDeletePosts);
 
-				$discussion->save();
-			}
+                $number = 0;
+                $firstPost = null;
+                while ($prow = $posts->fetch_object()) {
+                    $user = User::find($prow->uid);
 
-			if($migrateWithUsers)
-			{
-				foreach ($usersToRefresh as $userId) 
-				{
-					$user = User::find($userId);
-					$user->refreshCommentCount();
-					$user->refreshDiscussionCount();
-					$user->save();
-				}
-			}
-		}
-	}
+                    $post = CommentPost::reply($discussion->id, $prow->message, optional($user)->id, null);
+                    $post->created_at = $prow->dateline;
+                    $post->is_approved = true;
+                    $post->number = ++$number;
+                    if ($prow->visible == -1)
+                        $post->hidden_at = Carbon::now();
 
-	private function enableForeignKeyChecks()
-	{
-		app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 1');
-	}
+                    $post->save();
 
-	private function disableForeignKeyChecks()
-	{
-		app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 0');
-	}
+                    if ($firstPost === null)
+                        $firstPost = $post;
 
-	/**
-	 * Generate a random color
-	 *
-	 * @return string
-	 */
-	private function generateRandomColor(): string
-	{
-		return '#' . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
-	}
+                    if (!in_array($prow->uid, $usersToRefresh) && $user !== null)
+                        $usersToRefresh[] = $prow->uid;
 
-	private function getPrefix(): string
-	{
-		return $this->db_prefix;
-	}
+                    $this->count["posts"]++;
+                }
 
-	private function getMybbPath(): string
-	{
-		return $this->mybb_path;
-	}
+                if ($firstPost !== null)
+                    $discussion->setFirstPost($firstPost);
 
-	private function escapeString(string $source): string
-	{
-		return $this->connection->escape_string($source);
-	}
+                $discussion->refreshCommentCount();
+                $discussion->refreshLastPost();
+                $discussion->refreshParticipantCount();
 
-	private function getMybbConnection()
-	{
-		return $this->connection;
-	}
+                $discussion->save();
+            }
 
-	private function slugTag(string $value)
-	{
-		$slug = Str::slug($value);
-		$count = Tag::where('slug', 'LIKE', $slug . '%')->get()->count();
+            if ($migrateWithUsers) {
+                foreach ($usersToRefresh as $userId) {
+                    $user = User::find($userId);
+                    $user->refreshCommentCount();
+                    $user->refreshDiscussionCount();
+                    $user->save();
+                }
+            }
+        }
+    }
 
-		return $slug . ($count > 0 ? "-$count" : "");
-	}
+    private function slugDiscussion(string $value)
+    {
+        $slug = Str::slug($value);
+        $count = Discussion::where('slug', 'LIKE', $slug . '%')->get()->count();
 
-	private function slugDiscussion(string $value)
-	{
-		$slug = Str::slug($value);
-		$count = Discussion::where('slug', 'LIKE', $slug . '%')->get()->count();
+        return $slug . ($count > 0 ? "-$count" : "");
+    }
 
-		return $slug . ($count > 0 ? "-$count": "");
-	}
-
-	public function getProcessedCount()
-	{
-		return $this->count;
-	}
+    public function getProcessedCount()
+    {
+        return $this->count;
+    }
 }
