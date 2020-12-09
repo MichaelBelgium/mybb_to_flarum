@@ -16,6 +16,7 @@ class MyBBExtractor
     private $connection;
     private $db_prefix;
     private $mybb_path;
+    private $step = 500;
 
     public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '')
     {
@@ -27,61 +28,72 @@ class MyBBExtractor
 
     public function __destruct()
     {
-        if (!is_null($this->getMybbConnection()))
-            $this->getMybbConnection()->close();
+        if (!is_null($this->connection))
+            $this->connection->close();
     }
 
-    protected function getMybbConnection()
+    public function getGroups(int $offset = 0)
     {
-        return $this->connection;
+        $query = "SELECT gid, title FROM {$this->db_prefix}usergroups WHERE type = 2";
+        return $this->getGenerator($query, $offset);
     }
 
-
-    public function escapeString(string $source): string
+    protected function getGenerator($query, $offset = 0)
     {
-        return $this->connection->escape_string($source);
+        $helper = new QueryHelper($this->connection, $query, $this->step, $offset);
+        return $helper->fetch();
     }
 
-    public function getGroups()
+    public function getUsers(int $offset = 0)
     {
-        return $this->getMybbConnection()->query("SELECT * FROM {$this->db_prefix}usergroups WHERE type = 2");
+        $query = "SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM {$this->getPrefix()}users";
+        return $this->getGenerator($query, $offset);
     }
 
-    public function getUsers()
+    protected function getPrefix()
     {
-        return $this->getMybbConnection()->query(
-            "SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM {$this->getPrefix()}users"
-        );
+        return $this->db_prefix;
     }
 
-    public function getCategories()
+    public function getCategories(int $offset = 0)
     {
-        return $this->getMybbConnection()->query("SELECT fid, name, description, linkto, disporder, pid FROM {$this->getPrefix()}forums order by fid");
+        $query = "SELECT fid, name, description, linkto, disporder, pid FROM {$this->getPrefix()}forums order by fid";
+        return $this->getGenerator($query, $offset);
     }
 
-    public function getThreads(bool $includeSoftDeletedThreads)
+    public function getThreads(bool $includeSoftDeletedThreads, int $offset = 0)
     {
         $query = "SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM {$this->getPrefix()}threads";
         if (!$includeSoftDeletedThreads) {
             $query .= " WHERE visible != -1";
         }
-
-        return $this->getMybbConnection()->query($query);
+        return $this->getGenerator($query, $offset);
     }
 
-    public function getPosts(int $id, bool $includeSoftDeletePosts)
+    public function getPosts(int $tid, bool $includeSoftDeletePosts, int $offset = 0)
     {
-        $query = "SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message, visible FROM {$this->getPrefix()}posts WHERE tid = {$id}";
+        $query = "SELECT pid, tid, FROM_UNIXTIME(dateline) as dateline, uid, message, visible FROM {$this->getPrefix()}posts WHERE tid = {$tid}";
         if (!$includeSoftDeletePosts) {
             $query .= " AND visible != -1";
         }
         $query .= " order by pid";
 
-        return $this->getMybbConnection()->query($query);
+        return $this->getGenerator($query, $offset);
     }
 
-    private function getPrefix()
+    /**
+     * @return int
+     */
+    public function getStep(): int
     {
-        return $this->db_prefix;
+        return $this->step;
+    }
+
+    /**
+     * @param int $step
+     */
+    public function setStep(int $step): void
+    {
+        $this->step = $step;
     }
 }

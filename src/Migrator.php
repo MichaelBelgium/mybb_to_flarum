@@ -19,8 +19,6 @@ use Illuminate\Support\Str;
 class Migrator
 {
     const FLARUM_AVATAR_PATH = "assets/avatars/";
-    private $connection;
-    private $db_prefix;
     private $mybb_path;
     private $count = [
         "users" => 0,
@@ -56,16 +54,13 @@ class Migrator
     {
         $groups = $this->extractor->getGroups();
 
-        if ($groups->num_rows > 0) {
-            Group::where('id', '>', '4')->delete();
+        Group::where('id', '>', '4')->delete();
+        foreach ($groups as $row) {
+            $group = Group::build($row->title, $row->title, $this->generateRandomColor(), null);
+            $group->id = $row->gid;
+            $group->save();
 
-            while ($row = $groups->fetch_object()) {
-                $group = Group::build($row->title, $row->title, $this->generateRandomColor(), null);
-                $group->id = $row->gid;
-                $group->save();
-
-                $this->count["groups"]++;
-            }
+            $this->count["groups"]++;
         }
     }
 
@@ -90,53 +85,51 @@ class Migrator
         $this->disableForeignKeyChecks();
 
         $users = $this->extractor->getUsers();
+        User::truncate();
 
-        if ($users->num_rows > 0) {
-            User::truncate();
 
-            while ($row = $users->fetch_object()) {
-                $newUser = User::register(
-                    $row->username,
-                    $row->email,
-                    password_hash(time(), PASSWORD_BCRYPT)
-                );
+        foreach ($users as $row) {
+            $newUser = User::register(
+                $row->username,
+                $row->email,
+                password_hash(time(), PASSWORD_BCRYPT)
+            );
 
-                $newUser->activate();
-                $newUser->id = $row->uid;
-                $newUser->joined_at = $row->regdate;
-                $newUser->last_seen_at = $row->lastvisit;
-                $newUser->discussion_count = $row->threadnum;
-                $newUser->comment_count = $row->postnum;
+            $newUser->activate();
+            $newUser->id = $row->uid;
+            $newUser->joined_at = $row->regdate;
+            $newUser->last_seen_at = $row->lastvisit;
+            $newUser->discussion_count = $row->threadnum;
+            $newUser->comment_count = $row->postnum;
 
-                if ($migrateAvatars && !empty($this->getMybbPath()) && !empty($row->avatar)) {
-                    $fullpath = $this->getMybbPath() . explode("?", $row->avatar)[0];
-                    $avatar = basename($fullpath);
-                    if (file_exists($fullpath)) {
-                        if (copy($fullpath, self::FLARUM_AVATAR_PATH . $avatar))
-                            $newUser->changeAvatarPath($avatar);
-                    }
+            if ($migrateAvatars && !empty($this->getMybbPath()) && !empty($row->avatar)) {
+                $fullpath = $this->getMybbPath() . explode("?", $row->avatar)[0];
+                $avatar = basename($fullpath);
+                if (file_exists($fullpath)) {
+                    if (copy($fullpath, self::FLARUM_AVATAR_PATH . $avatar))
+                        $newUser->changeAvatarPath($avatar);
                 }
-
-                $newUser->save();
-
-                if ($migrateWithUserGroups) {
-                    $userGroups = [(int)$row->usergroup];
-
-                    if (!empty($row->additionalgroups)) {
-                        $userGroups = array_merge(
-                            $userGroups,
-                            array_map("intval", explode(",", $row->additionalgroups))
-                        );
-                    }
-
-                    foreach ($userGroups as $group) {
-                        if ($group <= 7) continue;
-                        $newUser->groups()->save(Group::find($group));
-                    }
-                }
-
-                $this->count["users"]++;
             }
+
+            $newUser->save();
+
+            if ($migrateWithUserGroups) {
+                $userGroups = [(int)$row->usergroup];
+
+                if (!empty($row->additionalgroups)) {
+                    $userGroups = array_merge(
+                        $userGroups,
+                        array_map("intval", explode(",", $row->additionalgroups))
+                    );
+                }
+
+                foreach ($userGroups as $group) {
+                    if ($group <= 7) continue;
+                    $newUser->groups()->save(Group::find($group));
+                }
+            }
+
+            $this->count["users"]++;
         }
 
         $this->enableForeignKeyChecks();
@@ -163,25 +156,23 @@ class Migrator
     public function migrateCategories()
     {
         $categories = $this->extractor->getCategories();
+        // FIXME: why are we deleting here instead of truncating?
+        Tag::getQuery()->delete();
 
-        if ($categories->num_rows > 0) {
-            Tag::getQuery()->delete();
+        foreach ($categories as $row) {
+            if (!empty($row->linkto)) continue; //forums with links are not supported in flarum
 
-            while ($row = $categories->fetch_object()) {
-                if (!empty($row->linkto)) continue; //forums with links are not supported in flarum
+            $tag = Tag::build($row->name, $this->slugTag($row->name), $row->description, $this->generateRandomColor(), null, false);
 
-                $tag = Tag::build($row->name, $this->slugTag($row->name), $row->description, $this->generateRandomColor(), null, false);
+            $tag->id = $row->fid;
+            $tag->position = (int)$row->disporder - 1;
 
-                $tag->id = $row->fid;
-                $tag->position = (int)$row->disporder - 1;
+            if ($row->pid != 0)
+                $tag->parent()->associate(Tag::find($row->pid));
 
-                if ($row->pid != 0)
-                    $tag->parent()->associate(Tag::find($row->pid));
+            $tag->save();
 
-                $tag->save();
-
-                $this->count["categories"]++;
-            }
+            $this->count["categories"]++;
         }
     }
 
@@ -205,91 +196,90 @@ class Migrator
     {
         $threads = $this->extractor->getThreads($migrateSoftDeletedThreads);
 
-        if ($threads->num_rows > 0) {
-            Discussion::getQuery()->delete();
-            Post::getQuery()->delete();
-            $usersToRefresh = [];
+        Discussion::getQuery()->delete();
+        Post::getQuery()->delete();
+        $usersToRefresh = [];
 
-            while ($trow = $threads->fetch_object()) {
-                $tag = Tag::find($trow->fid);
+        foreach ($threads as $trow) {
+            $tag = Tag::find($trow->fid);
 
-                $discussion = new Discussion();
-                $discussion->id = $trow->tid;
-                $discussion->title = $trow->subject;
+            $discussion = new Discussion();
+            $discussion->id = $trow->tid;
+            $discussion->title = $trow->subject;
 
-                if ($migrateWithUsers)
-                    $discussion->user()->associate(User::find($trow->uid));
+            if ($migrateWithUsers)
+                $discussion->user()->associate(User::find($trow->uid));
 
-                $discussion->slug = $this->slugDiscussion($trow->subject);
-                $discussion->is_approved = true;
-                $discussion->is_locked = $trow->closed == "1";
-                $discussion->is_sticky = $trow->sticky;
-                if ($trow->visible == -1)
-                    $discussion->hidden_at = Carbon::now();
+            $discussion->slug = $this->slugDiscussion($trow->subject);
+            $discussion->is_approved = true;
+            $discussion->is_locked = $trow->closed == "1";
+            $discussion->is_sticky = $trow->sticky;
+            if ($trow->visible == -1)
+                $discussion->hidden_at = Carbon::now();
 
-                $discussion->save();
+            $discussion->save();
 
-                $this->count["discussions"]++;
+            $this->count["discussions"]++;
 
-                if (!in_array($trow->uid, $usersToRefresh) && $trow->uid != 0)
-                    $usersToRefresh[] = $trow->uid;
+            if (!in_array($trow->uid, $usersToRefresh) && $trow->uid != 0)
+                $usersToRefresh[] = $trow->uid;
 
-                $continue = true;
+            $continue = true;
 
-                if (!is_null($tag) && $migrateWithCategories) {
-                    do {
-                        $tag->discussions()->save($discussion);
+            if (!is_null($tag) && $migrateWithCategories) {
+                do {
+                    $tag->discussions()->save($discussion);
 
-                        if (is_null($tag->parent_id))
-                            $continue = false;
-                        else
-                            $tag = Tag::find($tag->parent_id);
+                    if (is_null($tag->parent_id))
+                        $continue = false;
+                    else
+                        $tag = Tag::find($tag->parent_id);
 
-                    } while ($continue);
-                }
-
-                $posts = $this->extractor->getPosts($discussion->id, $migrateSoftDeletePosts);
-
-                $number = 0;
-                $firstPost = null;
-                while ($prow = $posts->fetch_object()) {
-                    $user = User::find($prow->uid);
-
-                    $post = CommentPost::reply($discussion->id, $prow->message, optional($user)->id, null);
-                    $post->created_at = $prow->dateline;
-                    $post->is_approved = true;
-                    $post->number = ++$number;
-                    if ($prow->visible == -1)
-                        $post->hidden_at = Carbon::now();
-
-                    $post->save();
-
-                    if ($firstPost === null)
-                        $firstPost = $post;
-
-                    if (!in_array($prow->uid, $usersToRefresh) && $user !== null)
-                        $usersToRefresh[] = $prow->uid;
-
-                    $this->count["posts"]++;
-                }
-
-                if ($firstPost !== null)
-                    $discussion->setFirstPost($firstPost);
-
-                $discussion->refreshCommentCount();
-                $discussion->refreshLastPost();
-                $discussion->refreshParticipantCount();
-
-                $discussion->save();
+                } while ($continue);
             }
 
-            if ($migrateWithUsers) {
-                foreach ($usersToRefresh as $userId) {
-                    $user = User::find($userId);
-                    $user->refreshCommentCount();
-                    $user->refreshDiscussionCount();
-                    $user->save();
-                }
+            $posts = $this->extractor->getPosts($discussion->id, $migrateSoftDeletePosts);
+
+            $number = 0;
+            $firstPost = null;
+            foreach ($posts as $prow) {
+                $user = User::find($prow->uid);
+
+                $post = CommentPost::reply($discussion->id, $prow->message, optional($user)->id, null);
+                $post->created_at = $prow->dateline;
+                $post->is_approved = true;
+                $post->number = ++$number;
+                if ($prow->visible == -1)
+                    $post->hidden_at = Carbon::now();
+
+                $post->save();
+
+                if ($firstPost === null)
+                    $firstPost = $post;
+
+                if (!in_array($prow->uid, $usersToRefresh) && $user !== null)
+                    $usersToRefresh[] = $prow->uid;
+
+                $this->count["posts"]++;
+            }
+
+            if ($firstPost !== null)
+                $discussion->setFirstPost($firstPost);
+
+            $discussion->refreshCommentCount();
+            $discussion->refreshLastPost();
+            $discussion->refreshParticipantCount();
+
+            $discussion->save();
+        }
+
+        if ($migrateWithUsers) {
+            // TODO do this with a single query. or a batched one
+            foreach ($usersToRefresh as $userId) {
+                $user = User::find($userId);
+                $user->refreshCommentCount();
+                $user->refreshDiscussionCount();
+                $user->save();
             }
         }
     }
