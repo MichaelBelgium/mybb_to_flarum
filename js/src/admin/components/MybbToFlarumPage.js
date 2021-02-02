@@ -1,11 +1,11 @@
-import Page from 'flarum/components/Page';
+import ExtensionPage from 'flarum/components/ExtensionPage';
 import Switch from 'flarum/components/Switch';
 import Button from 'flarum/components/Button';
 import FieldSet from 'flarum/components/FieldSet';
 import saveSettings from 'flarum/utils/saveSettings';
 import Stream from 'flarum/utils/Stream';
 
-export default class MybbToFlarumPage extends Page {
+export default class MybbToFlarumPage extends ExtensionPage {
     oninit(vnode) {
         super.oninit(vnode);
         
@@ -28,7 +28,7 @@ export default class MybbToFlarumPage extends Page {
         };
     }
 
-      view() {
+    content() {
         return (
             <div className="mybbtoflarumPage">
                 <div className="mybbtoflarumPage-header">
