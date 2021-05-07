@@ -69,28 +69,24 @@ class MybbToFlarumCommand extends AbstractCommand
 
             if ($doGroups) {
                 $migrator->migrateUserGroups();
-                $this->info("user groups migrated");
             }
             $counts = $migrator->getProcessedCount();
             $this->info("{$counts["groups"]} user groups migrated");
 
             if ($doUsers) {
                 $migrator->migrateUsers($migrate_avatars, $doGroups);
-                $this->info("users migrated");
             }
             $counts = $migrator->getProcessedCount();
             $this->info("{$counts["users"]} users migrated");
 
             if ($doCategories) {
                 $migrator->migrateCategories();
-                $this->info("categories migrated");
             }
             $counts = $migrator->getProcessedCount();
             $this->info("{$counts["categories"]} categories migrated");
 
             if ($doThreadsPosts) {
                 $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts);
-                $this->info("discussions migrated");
             }
             $counts = $migrator->getProcessedCount();
             $this->info("{$counts["discussions"]} discussions migrated");
