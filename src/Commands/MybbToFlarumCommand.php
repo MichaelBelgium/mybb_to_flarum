@@ -13,7 +13,7 @@ class MybbToFlarumCommand extends AbstractCommand
     protected $options = [
         'host'=> ['host', null, InputOption::VALUE_REQUIRED, 'host of the mybb database'],
         'user'=> ['user', 'u', InputOption::VALUE_REQUIRED, 'user of the mybb database'],
-        'password'=> ['password', 'p', InputOption::VALUE_OPTIONAL, 'password for the mybb database', false],
+        'password'=> ['password', 'p', InputOption::VALUE_OPTIONAL, 'password for the mybb database', ''],
         'db'=> ['db', 'd', InputOption::VALUE_REQUIRED, 'name of the mybb database'],
         'prefix'=> ['prefix', null, InputOption::VALUE_OPTIONAL, 'prefix of the mybb database tables', 'mybb_'],
         'path'=> ['path', null, InputOption::VALUE_OPTIONAL, 'path to the mybb forum (used for avatar migration)', false],
@@ -44,7 +44,10 @@ class MybbToFlarumCommand extends AbstractCommand
     {
         $this->interactive = $this->input->getOption('interactive');
 
+        $host = $this->getOptionOrPrompt('host');
+        $user = $this->getOptionOrPrompt('user');
         $password = $this->getOptionOrPrompt('password');
+        $db = $this->getOptionOrPrompt('db');
         $migrate_avatars = $this->input->getOption('avatars');
         $migrate_softposts = $this->input->getOption('soft-posts');
         $migrate_softthreads = $this->input->getOption('soft-threads');
@@ -56,10 +59,10 @@ class MybbToFlarumCommand extends AbstractCommand
 
         try {
             $migrator = new Migrator(
-                $this->input->getOption('host'),
-                $this->input->getOption('user'),
+                $host,
+                $user,
                 $password,
-                $this->input->getOption('db'),
+                $db,
                 $this->input->getOption('prefix'),
                 $this->input->getOption('path')
             );
@@ -68,28 +71,32 @@ class MybbToFlarumCommand extends AbstractCommand
                 $migrator->migrateUserGroups();
                 $this->info("user groups migrated");
             }
-            $this->showCounts($migrator);
+            $counts = $migrator->getProcessedCount();
+            $this->info("{$counts["groups"]} user groups migrated");
 
             if ($doUsers) {
                 $migrator->migrateUsers($migrate_avatars, $doGroups);
                 $this->info("users migrated");
             }
-            $this->showCounts($migrator);
+            $counts = $migrator->getProcessedCount();
+            $this->info("{$counts["users"]} users migrated");
 
             if ($doCategories) {
                 $migrator->migrateCategories();
                 $this->info("categories migrated");
             }
-            $this->showCounts($migrator);
+            $counts = $migrator->getProcessedCount();
+            $this->info("{$counts["categories"]} categories migrated");
 
             if ($doThreadsPosts) {
                 $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts);
                 $this->info("discussions migrated");
             }
+            $counts = $migrator->getProcessedCount();
+            $this->info("{$counts["discussions"]} discussions migrated");
+            $this->info("{$counts["posts"]} posts migrated");
 
             $this->info("Migration successful\n\n");
-
-            $this->showCounts($migrator);
 
         } catch (Exception $e) {
             $this->error($e->getMessage());
@@ -104,17 +111,13 @@ class MybbToFlarumCommand extends AbstractCommand
                 $this->error("missing required value for {$optionName}");
             }
             $helper = $this->getHelper('question');
-            $question = new Question("Please input the {$this->options[$optionName][3]}");
-            $question->setHidden(true);
+            $question = new Question("Please input the {$this->options[$optionName][3]}: ");
+            if($optionName == 'password') {
+                $question->setHidden(true);
+            }
 
             $value = $helper->ask($this->input, $this->output, $question);
         }
         return $value;
-    }
-
-    protected function showCounts($migrator)
-    {
-        $counts = $migrator->getProcessedCount();
-        $this->info("• {$counts["users"]} users\n• {$counts["groups"]} user groups\n• {$counts["categories"]} categories\n• {$counts["discussions"]} discussions\n• {$counts["posts"]} posts");
     }
 }
