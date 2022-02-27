@@ -28,7 +28,7 @@ class Migrator
 		"posts" => 0
 	];
 
-	const FLARUM_AVATAR_PATH = "assets/avatars/";
+	const FLARUM_AVATAR_PATH = "public/assets/avatars/";
 
 	/**
 	 * Migrator constructor
@@ -45,6 +45,10 @@ class Migrator
 		$this->connection = new \mysqli($host, $user, $password, $db);
 		$this->connection->set_charset('utf8');
 		$this->db_prefix = $prefix;
+
+		if(substr($mybbPath, -1) != '/')
+			$mybbPath .= '/';
+		
 		$this->mybb_path = $mybbPath;
 	}
 
@@ -113,6 +117,9 @@ class Migrator
 					$avatar = basename($fullpath);
 					if(file_exists($fullpath))
 					{
+						if(!file_exists(self::FLARUM_AVATAR_PATH))
+							mkdir(self::FLARUM_AVATAR_PATH, 0777, true);
+
 						if(copy($fullpath,self::FLARUM_AVATAR_PATH.$avatar))
 							$newUser->changeAvatarPath($avatar);
 					}
