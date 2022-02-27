@@ -24,10 +24,8 @@ class MybbToFlarumCommand extends AbstractCommand
         'do-threads-posts'=> ['do-threads-posts', null, InputOption::VALUE_OPTIONAL, 'import posts', true],
         'do-groups'=> ['do-groups', null, InputOption::VALUE_OPTIONAL, 'import groups', true],
         'do-categories'=> ['do-categories', null, InputOption::VALUE_OPTIONAL, 'import categories', true],
-        'interactive'=> ['interactive', 'i', InputOption::VALUE_OPTIONAL, 'if false, do not prompt the user for missing data. useful for scripts', true]
     ];
 
-    protected $interactive = false;
 
     protected function configure()
     {
@@ -42,8 +40,6 @@ class MybbToFlarumCommand extends AbstractCommand
 
     protected function fire()
     {
-        $this->interactive = $this->input->getOption('interactive');
-
         $host = $this->getOptionOrPrompt('host');
         $user = $this->getOptionOrPrompt('user');
         $password = $this->getOptionOrPrompt('password');
@@ -103,7 +99,7 @@ class MybbToFlarumCommand extends AbstractCommand
     {
         $value = $this->input->getOption($optionName);
         if (empty($value)) {
-            if(!$this->interactive) {
+            if($this->input->getOption('no-interaction')) {
                 $this->error("missing required value for {$optionName}");
             }
             $helper = $this->getHelper('question');
