@@ -41,6 +41,7 @@ class MybbToFlarumController implements RequestHandlerInterface
         $migrate_avatars = Arr::get($request->getParsedBody(), 'avatars');
         $migrate_softposts = Arr::get($request->getParsedBody(), 'softposts');
         $migrate_softthreads = Arr::get($request->getParsedBody(), 'softthreads');
+        $migrate_attachments = Arr::get($request->getParsedBody(), 'attachments');
         
         $doUsers = Arr::get($request->getParsedBody(), 'doUsers');
         $doThreadsPosts = Arr::get($request->getParsedBody(), 'doThreadsPosts');
@@ -67,11 +68,11 @@ class MybbToFlarumController implements RequestHandlerInterface
                 $migrator->migrateCategories();
             
             if($doThreadsPosts)
-                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts);
+                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $migrate_attachments);
 
             $counts = $migrator->getProcessedCount();
 
-            $response["message"] = "Migration successful\n\n• {$counts["users"]} users\n• {$counts["groups"]} user groups\n• {$counts["categories"]} categories\n• {$counts["discussions"]} discussions\n• {$counts["posts"]} posts";
+            $response["message"] = "Migration successful\n\n• {$counts["users"]} users\n• {$counts["groups"]} user groups\n• {$counts["categories"]} categories\n• {$counts["discussions"]} discussions\n• {$counts["posts"]} posts with {$counts["attachments"]} attachments";
         } catch (Exception $e) {
             $response["error"] = true;
             $response["message"] = $e->getMessage();

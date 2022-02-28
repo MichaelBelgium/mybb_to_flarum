@@ -54,6 +54,21 @@ export default class MybbToFlarumPage extends ExtensionPage {
                                             $("input[name=mybbPath]").attr("disabled", "disabled");
                                     }
                                 }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_avatars_label')),
+                                
+                                Switch.component({
+                                    state: this.migrateAttachments(),
+                                    onchange: (value) => {
+                                        this.migrateAttachments(value);
+
+                                        if(value)
+                                        {
+                                            this.migrateThreadsPosts(value);
+                                            $("input[name=mybbPath]").removeAttr("disabled");
+                                        }
+                                        else
+                                            $("input[name=mybbPath]").attr("disabled", "disabled");
+                                    },
+                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_attachments_label')),
 
                                 Switch.component({
                                     state: this.migrateSoftThreads(),
@@ -98,7 +113,16 @@ export default class MybbToFlarumPage extends ExtensionPage {
 
                                 Switch.component({
                                     state: this.migrateThreadsPosts(),
-                                    onchange: this.migrateThreadsPosts,
+                                    onchange: (value) => {
+                                        this.migrateThreadsPosts(value);
+
+                                        if(!value) {
+                                            this.migrateAttachments(value);
+                                            this.migrateSoftPosts(value);
+                                            this.migrateSoftThreads(value);
+                                            $("input[name=mybbPath]").attr("disabled", "disabled");
+                                        }
+                                    },
                                 }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_threadsPosts_label')),
 
                                 Switch.component({
@@ -161,7 +185,7 @@ export default class MybbToFlarumPage extends ExtensionPage {
             'mybb_password': this.mybb.password(),
             'mybb_db': this.mybb.db(),
             'mybb_prefix': this.mybb.prefix(),
-            'mybb_path': (this.mybb.mybbPath().endsWith('/') ? this.mybb.mybbPath() : this.mybb.mybbPath() + '/')
+            'mybb_path': this.mybb.mybbPath()
         }).then(() => {
             app.request({
                 method: 'POST',
@@ -170,6 +194,7 @@ export default class MybbToFlarumPage extends ExtensionPage {
                     avatars: this.migrateAvatars(),
                     softposts: this.migrateSoftPosts(),
                     softthreads: this.migrateSoftThreads(),
+                    attachments: this.migrateAttachments(),
                     doUsers: this.migrateUsers(),
                     doThreadsPosts: this.migrateThreadsPosts(),
                     doGroups: this.migrateUserGroups(),

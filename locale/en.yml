@@ -23,3 +23,4 @@ michaelbelgium-mybb-to-flarum:
           migrate_threadsPosts_label: Migrate threads and posts
           migrate_userGroups_label: Migrate user groups
           migrate_categories_label: Migrate categories
+          migrate_attachments_label: Migrate attachments
