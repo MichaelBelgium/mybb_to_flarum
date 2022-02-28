@@ -6,9 +6,11 @@ use Flarum\User\User;
 use Flarum\Tags\Tag;
 use Flarum\Group\Group;
 use Flarum\Discussion\Discussion;
+use Flarum\Http\UrlGenerator;
 use Flarum\Post\CommentPost;
 use Flarum\Post\Post;
 use Illuminate\Support\Str;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Migrator class
@@ -25,10 +27,12 @@ class Migrator
         "groups" => 0,
         "categories" => 0,
         "discussions" => 0,
-        "posts" => 0
+        "posts" => 0,
+        "attachments" => 0,
     ];
 
     const FLARUM_AVATAR_PATH = "public/assets/avatars/";
+    const FLARUM_UPLOAD_PATH = "public/assets/files/";
 
     /**
      * Migrator constructor
@@ -191,8 +195,15 @@ class Migrator
      * @param bool $migrateSoftDeletedThreads Migrate also soft deleted threads from mybb
      * @param bool $migrateSoftDeletePosts Migrate also soft deleted posts from mybb
      */
-    public function migrateDiscussions(bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, bool $migrateSoftDeletePosts)
+    public function migrateDiscussions(
+        bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, 
+        bool $migrateSoftDeletePosts, bool $migrateAttachments)
     {
+        $migrateAttachments = class_exists('FoF\Upload\File') && $migrateAttachments;
+
+        /** @var UrlGenerator $generator */
+        $generator = resolve(UrlGenerator::class);
+            
         $query = "SELECT tid, fid, subject, FROM_UNIXTIME(dateline) as dateline, uid, firstpost, FROM_UNIXTIME(lastpost) as lastpost, lastposteruid, closed, sticky, visible FROM {$this->getPrefix()}threads";
         if(!$migrateSoftDeletedThreads)
         {
@@ -277,7 +288,46 @@ class Migrator
                     if(!in_array($prow->uid, $usersToRefresh) && $user !== null)
                         $usersToRefresh[] = $prow->uid;
 
-                    $this->count["posts"]++;					
+                    $this->count["posts"]++;
+
+                    if($migrateAttachments)
+                    {                        
+                        $attachments = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}attachments WHERE pid = {$prow->pid}");
+
+                        while ($arow = $attachments->fetch_object())
+                        {
+                            $filePath = $this->getMybbPath().'uploads/'.$arow->attachname;
+                            $toFilePath = self::FLARUM_UPLOAD_PATH.$arow->attachname;
+                            $dirFilePath = dirname($toFilePath);
+
+                            if(!file_exists($dirFilePath))
+                                mkdir($dirFilePath, 0777, true);
+
+                            if(!copy($filePath,$toFilePath)) continue;
+
+                            $uploader = User::find($arow->uid);
+                            $fileTemplate = new \FoF\Upload\Templates\FileTemplate();
+
+                            $file = new \FoF\Upload\File();
+                            $file->post()->associate($post);
+                            $file->discussion()->associate($post->discussion);
+                            $file->actor()->associate($uploader);
+                            $file->base_name = $arow->filename;
+                            $file->path = $arow->attachname;
+                            $file->type = $arow->filetype;
+                            $file->size = (int)$arow->filesize;
+                            $file->upload_method = 'local';
+                            $file->url = $generator->to('forum')->path('assets/files/'.$arow->attachname);
+                            $file->uuid = Uuid::uuid4()->toString();
+                            $file->tag = $fileTemplate;
+                            $file->save();
+
+                            $file->post->content = $file->post->content . $fileTemplate->preview($file);
+                            $file->post->save();
+
+                            $this->count["attachments"]++;
+                        }
+                    }
                 }
 
                 if($firstPost !== null)
