@@ -40,7 +40,48 @@ export default class MybbToFlarumPage extends ExtensionPage {
                 <div className="mybbtoflarumPage-content">
                     <div className="container">
                         <form onsubmit={this.onsubmit.bind(this)}>
-                            <FieldSet label={app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.title')}>
+                            
+                        <FieldSet label={app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.title')}>
+                            {[
+                                Switch.component({
+                                    state: this.migrateUsers(),
+                                    onchange: (value) => {
+                                        this.migrateUsers(value);
+
+                                        if(!value) {
+                                            this.migrateAvatars(value);
+                                            $("input[name=mybbPath]").attr("disabled", "disabled");
+                                        }
+                                    }
+                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_users_label')),
+
+                                Switch.component({
+                                    state: this.migrateThreadsPosts(),
+                                    onchange: (value) => {
+                                        this.migrateThreadsPosts(value);
+
+                                        if(!value) {
+                                            this.migrateAttachments(value);
+                                            this.migrateSoftPosts(value);
+                                            this.migrateSoftThreads(value);
+                                            $("input[name=mybbPath]").attr("disabled", "disabled");
+                                        }
+                                    },
+                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_threadsPosts_label')),
+
+                                Switch.component({
+                                    state: this.migrateUserGroups(),
+                                    onchange: this.migrateUserGroups,
+                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_userGroups_label')),
+
+                                Switch.component({
+                                    state: this.migrateCategories(),
+                                    onchange: this.migrateCategories,
+                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_categories_label'))
+                            ]}
+                            </FieldSet>
+
+                            <FieldSet label={app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.title')}>
                                 {[Switch.component({
                                     state: this.migrateAvatars(),
                                     onchange: (value) => {
@@ -54,7 +95,7 @@ export default class MybbToFlarumPage extends ExtensionPage {
                                         else
                                             $("input[name=mybbPath]").attr("disabled", "disabled");
                                     }
-                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_avatars_label')),
+                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_avatars_label')),
                                 
                                 Switch.component({
                                     state: this.migrateAttachments(),
@@ -74,12 +115,12 @@ export default class MybbToFlarumPage extends ExtensionPage {
                                 Switch.component({
                                     state: this.migrateSoftThreads(),
                                     onchange: this.migrateSoftThreads
-                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_soft_threads_label')),
+                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_soft_threads_label')),
 
                                 Switch.component({
                                     state: this.migrateSoftPosts(),
                                     onchange: this.migrateSoftPosts
-                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.general.migrate_soft_posts_label'))
+                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_soft_posts_label'))
                             ]}
                             </FieldSet>
 
@@ -96,46 +137,6 @@ export default class MybbToFlarumPage extends ExtensionPage {
                                 <input className="FormControl" type="text" bidi={this.mybb.prefix} value={this.mybb.prefix()} />
                                 <div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.path_label')}</div>
                                 <input className="FormControl" type="text" bidi={this.mybb.mybbPath} name="mybbPath" placeholder="/path/to/mybb" />
-                            </FieldSet>
-
-                            <FieldSet label={app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.title')}>
-                            {[
-                                Switch.component({
-                                    state: this.migrateUsers(),
-                                    onchange: (value) => {
-                                        this.migrateUsers(value);
-
-                                        if(!value) {
-                                            this.migrateAvatars(value);
-                                            $("input[name=mybbPath]").attr("disabled", "disabled");
-                                        }
-                                    }
-                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_users_label')),
-
-                                Switch.component({
-                                    state: this.migrateThreadsPosts(),
-                                    onchange: (value) => {
-                                        this.migrateThreadsPosts(value);
-
-                                        if(!value) {
-                                            this.migrateAttachments(value);
-                                            this.migrateSoftPosts(value);
-                                            this.migrateSoftThreads(value);
-                                            $("input[name=mybbPath]").attr("disabled", "disabled");
-                                        }
-                                    },
-                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_threadsPosts_label')),
-
-                                Switch.component({
-                                    state: this.migrateUserGroups(),
-                                    onchange: this.migrateUserGroups,
-                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_userGroups_label')),
-
-                                Switch.component({
-                                    state: this.migrateCategories(),
-                                    onchange: this.migrateCategories,
-                                }, app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_categories_label'))
-                            ]}
                             </FieldSet>
 
                             {Button.component(
