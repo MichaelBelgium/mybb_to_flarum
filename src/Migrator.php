@@ -197,8 +197,8 @@ class Migrator
      */
     public function migrateDiscussions(
         bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, 
-        bool $migrateSoftDeletePosts, bool $migrateAttachments)
-    {
+        bool $migrateSoftDeletePosts, bool $migrateAttachments
+    ) {
         $migrateAttachments = class_exists('FoF\Upload\File') && $migrateAttachments;
 
         /** @var UrlGenerator $generator */

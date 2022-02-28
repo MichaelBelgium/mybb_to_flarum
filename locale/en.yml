@@ -1,7 +1,7 @@
 michaelbelgium-mybb-to-flarum:
   admin:
     content:
-      description_text: Convert a Mybb forum into this Flarum instance. Fill in the required data, aftwards click on "migrate".
+      description_text: Migrate a MyBB forum into this Flarum instance. Fill in the required data, aftwards click on "migrate".
       convert_button: Migrate
       form:
         general:

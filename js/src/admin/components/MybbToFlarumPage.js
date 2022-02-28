@@ -9,9 +9,10 @@ export default class MybbToFlarumPage extends ExtensionPage {
     oninit(vnode) {
         super.oninit(vnode);
         
-        this.migrateAvatars = Stream(true);
+        this.migrateAvatars = Stream(false);
         this.migrateSoftThreads = Stream(false);
         this.migrateSoftPosts = Stream(false);
+        this.migrateAttachments = Stream(false);
 
         this.migrateThreadsPosts = Stream(true);
         this.migrateUsers = Stream(true);
