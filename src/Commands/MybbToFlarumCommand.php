@@ -26,11 +26,12 @@ class MybbToFlarumCommand extends AbstractCommand
 
         //sub options for avatars
         'avatars' => ['avatars', null, InputOption::VALUE_NONE, 'Import avatars'],
-        'path' => ['path', null, InputOption::VALUE_OPTIONAL, 'Path to the mybb forum (used for avatar migration)', ''],
+        'path' => ['path', null, InputOption::VALUE_OPTIONAL, 'Path to the mybb forum (required for avatar and attachment migration)', ''],
 
         //sub options for threads/posts
         'soft-posts' => ['soft-posts', null, InputOption::VALUE_NONE, 'Import soft deleted posts'],
         'soft-threads' => ['soft-threads', null, InputOption::VALUE_NONE, 'Import soft deleted threads'],
+        'attachments' => ['attachments', null, InputOption::VALUE_NONE, 'Import attachments'],
     ];
 
     protected function configure()
@@ -53,6 +54,7 @@ class MybbToFlarumCommand extends AbstractCommand
         $migrate_avatars = $this->input->getOption('avatars');
         $migrate_softposts = $this->input->getOption('soft-posts');
         $migrate_softthreads = $this->input->getOption('soft-threads');
+        $migrate_attachments = $this->input->getOption('attachments');
 
         $doUsers = $this->input->getOption('users');
         $doThreadsPosts = $this->input->getOption('threads-posts');
@@ -69,6 +71,17 @@ class MybbToFlarumCommand extends AbstractCommand
         if($doUsers && $migrate_avatars && empty($path)) {
             $this->error('Mybb path (--path) needs to be provided when importing users + avatars');
             return Command::FAILURE;
+        }
+
+        if($doThreadsPosts && $migrate_attachments) {
+
+            if(empty($path)) {
+                $this->error('Mybb path (--path) needs to be provided when importing threads/posts + attachments');
+                return Command::FAILURE;
+            }
+
+            if(!class_exists('FoF\Upload\File'))
+                $this->info('WARNING: fof/upload not installed. Migrating attachments won\'t work.');
         }
 
         try {
@@ -94,7 +107,7 @@ class MybbToFlarumCommand extends AbstractCommand
             }
 
             if ($doThreadsPosts) {
-                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts);
+                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $migrate_attachments);
             }
 
             $counts = $migrator->getProcessedCount();
@@ -103,7 +116,7 @@ class MybbToFlarumCommand extends AbstractCommand
             $this->info("{$counts["users"]} users migrated");
             $this->info("{$counts["categories"]} categories migrated");
             $this->info("{$counts["discussions"]} discussions migrated");
-            $this->info("{$counts["posts"]} posts migrated");
+            $this->info("{$counts["posts"]} posts migrated with {$counts["attachments"]} attachments");
 
 
         } catch (Exception $e) {
