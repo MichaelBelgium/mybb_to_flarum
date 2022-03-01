@@ -14,6 +14,7 @@ In your admin panel you can choose what to migrate.
 * Posts
 * Groups
 * Avatars
+* Attachments (requires fof/upload)
 
 ## Installation
 
