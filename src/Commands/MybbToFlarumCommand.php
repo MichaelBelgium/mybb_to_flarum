@@ -94,23 +94,20 @@ class MybbToFlarumCommand extends AbstractCommand
                 $path
             );
 
-            if ($doGroups) {
+            if ($doGroups)
                 $migrator->migrateUserGroups();
-            }
 
-            if ($doUsers) {
+            if ($doUsers)
                 $migrator->migrateUsers($migrate_avatars, $doGroups);
-            }
 
-            if ($doCategories) {
+            if ($doCategories)
                 $migrator->migrateCategories();
-            }
 
-            if ($doThreadsPosts) {
+            if ($doThreadsPosts)
                 $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $migrate_attachments);
-            }
 
             $counts = $migrator->getProcessedCount();
+
             $this->info("Migration successful:");
             $this->info("{$counts["groups"]} user groups migrated");
             $this->info("{$counts["users"]} users migrated");
@@ -121,6 +118,7 @@ class MybbToFlarumCommand extends AbstractCommand
 
         } catch (Exception $e) {
             $this->error($e->getMessage());
+            return Command::FAILURE;
         }
 
         return Command::SUCCESS;

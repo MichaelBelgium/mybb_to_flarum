@@ -383,11 +383,6 @@ class Migrator
         return $this->mybb_path;
     }
 
-    private function escapeString(string $source): string
-    {
-        return $this->connection->escape_string($source);
-    }
-
     private function getMybbConnection()
     {
         return $this->connection;
