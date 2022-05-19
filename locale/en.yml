@@ -1,14 +1,15 @@
 michaelbelgium-mybb-to-flarum:
   admin:
     content:
-      description_text: Convert a Mybb forum into this Flarum instance. Fill in the required data, aftwards click on "migrate".
+      description_text: Migrate a MyBB forum into this Flarum instance. Fill in the required data, aftwards click on "migrate".
       convert_button: Migrate
       form:
-        general:
-          title: General settings
+        options:
+          title: Other options
           migrate_avatars_label: Migrate avatars
           migrate_soft_threads_label: Migrate soft deleted threads
           migrate_soft_posts_label: Migrate soft deleted posts
+          migrate_attachments_label: Migrate attachments
         mybb:
           title: MyBB settings
           host_label: Database host
@@ -17,8 +18,8 @@ michaelbelgium-mybb-to-flarum:
           db_label: Database name
           prefix_label: Table prefix
           path_label: Absolute MyBB path
-        options:
-          title: General migrate options
+        general:
+          title: General options
           migrate_users_label: Migrate users
           migrate_threadsPosts_label: Migrate threads and posts
           migrate_userGroups_label: Migrate user groups
