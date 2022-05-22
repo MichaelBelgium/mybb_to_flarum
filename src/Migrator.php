@@ -157,6 +157,56 @@ class Migrator
         $this->enableForeignKeyChecks();
     }
 
+    public function migratePrivateMessages(bool $withUsers)
+    {
+        $messages = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}privatemessages WHERE subject NOT LIKE 'Re: %' AND subject NOT LIKE '%buddy request%' AND folder = 2 ORDER BY dateline");
+        
+        while($row = $messages->fetch_object())
+        {
+            // initial thread
+            if($withUsers)
+            {
+                $user = User::find($row->uid);
+                $discussion = Discussion::start($row->subject, $user);
+            }
+            else
+            {
+                $user = null;
+                $discussion = new Discussion();
+                $discussion->title = $row->subject;
+            }
+            
+            $discussion->slug = $this->slugDiscussion($row->subject);
+            $discussion->is_approved = true;
+            $discussion->is_private = true;
+            $discussion->created_at = $row->dateline;
+            $discussion->save();
+
+            if($withUsers)
+            {
+                $toUsers = unserialize($row->recipients)['to'];
+                $toUsers[] = $row->uid;
+
+                $discussion->recipientUsers()->saveMany(array_map(
+                    fn ($userId) => User::find($userId)
+                , $toUsers));
+            }
+
+            //pm replies
+            $number = 1;
+
+            $post = CommentPost::reply($discussion->id, $row->message, optional($user)->id, null);
+            $post->created_at = $row->dateline;
+            $post->is_approved = true;
+            $post->number = $number;
+
+            $post->save();
+            $discussion->setFirstPost($post);
+        }
+
+        // $this->enableForeignKeyChecks();
+    }
+
     /**
      * Transform/migrate categories and forums into tags
      */
