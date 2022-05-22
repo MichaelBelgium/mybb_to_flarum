@@ -45,10 +45,11 @@ Options:
       --groups               Import groups
       --categories           Import categories
       --avatars              Import avatars
-      --path[=PATH]          Path to the mybb forum (used for avatar migration) [default: ""]
+      --path[=PATH]          Path to the mybb forum (required for avatar and attachment migration) [default: ""]
       --soft-posts           Import soft deleted posts
       --soft-threads         Import soft deleted threads
-  -h, --help                 Display help for the given command. When no command is given display help for the list command
+      --attachments          Import attachments
+  -h, --help                 Display help for the given command. When no command is given display help for the list command   
   -n, --no-interaction       Do not ask any interactive question
 ```
 
