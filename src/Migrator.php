@@ -90,7 +90,7 @@ class Migrator
      * @param bool $migrateAvatars
      * @param bool $migrateWithUserGroups
      */
-    public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false)
+    public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false, bool $migratePrivateMessages = false)
     {
         $this->disableForeignKeyChecks();
         
@@ -154,27 +154,21 @@ class Migrator
             }
         }
 
+        if($migratePrivateMessages)
+            $this->migratePrivateMessages();
+
         $this->enableForeignKeyChecks();
     }
 
-    public function migratePrivateMessages(bool $withUsers)
+    private function migratePrivateMessages()
     {
         $messages = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}privatemessages WHERE subject NOT LIKE 'Re: %' AND subject NOT LIKE '%buddy request%' AND folder = 2 ORDER BY dateline");
         
         while($row = $messages->fetch_object())
         {
             // initial thread
-            if($withUsers)
-            {
-                $user = User::find($row->uid);
-                $discussion = Discussion::start($row->subject, $user);
-            }
-            else
-            {
-                $user = null;
-                $discussion = new Discussion();
-                $discussion->title = $row->subject;
-            }
+            $user = User::find($row->uid);
+            $discussion = Discussion::start($row->subject, $user);
             
             $discussion->slug = $this->slugDiscussion($row->subject);
             $discussion->is_approved = true;
@@ -182,20 +176,18 @@ class Migrator
             $discussion->created_at = $row->dateline;
             $discussion->save();
 
-            if($withUsers)
-            {
-                $toUsers = unserialize($row->recipients)['to'];
-                $toUsers[] = $row->uid;
+            $toUsers = unserialize($row->recipients)['to'];
+            $toUsers[] = $row->uid;
 
-                $discussion->recipientUsers()->saveMany(array_map(
-                    fn ($userId) => User::find($userId)
-                , $toUsers));
-            }
+            $discussion->recipientUsers()->saveMany(array_map(
+                fn ($userId) => User::find($userId)
+            , $toUsers));
+            
 
             //pm replies
             $number = 1;
 
-            $post = CommentPost::reply($discussion->id, $row->message, optional($user)->id, null);
+            $post = CommentPost::reply($discussion->id, $row->message, $user->id, null);
             $post->created_at = $row->dateline;
             $post->is_approved = true;
             $post->number = $number;
@@ -207,12 +199,9 @@ class Migrator
 
             while($rRow = $replies->fetch_object())
             {
-                if($withUsers)
-                    $user = User::find($rRow->uid);
-                else
-                    $user = null;
+                $user = User::find($rRow->uid);
 
-                $post = CommentPost::reply($discussion->id, $rRow->message, optional($user)->id, null);
+                $post = CommentPost::reply($discussion->id, $rRow->message, $user->id, null);
                 $post->created_at = $rRow->dateline;
                 $post->is_approved = true;
                 $post->number = ++$number;
@@ -225,8 +214,6 @@ class Migrator
             $discussion->refreshParticipantCount();
             $discussion->save();
         }
-
-        // $this->enableForeignKeyChecks();
     }
 
     /**
