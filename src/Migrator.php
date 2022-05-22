@@ -202,6 +202,28 @@ class Migrator
 
             $post->save();
             $discussion->setFirstPost($post);
+
+            $replies = $this->getMybbConnection()->query("SELECT uid, toid, subject, message, dateline FROM {$this->getPrefix()}privatemessages WHERE folder = 2 AND subject = 'Re: {$row->subject}' ORDER BY dateline ASC");
+
+            while($rRow = $replies->fetch_object())
+            {
+                if($withUsers)
+                    $user = User::find($rRow->uid);
+                else
+                    $user = null;
+
+                $post = CommentPost::reply($discussion->id, $rRow->message, optional($user)->id, null);
+                $post->created_at = $rRow->dateline;
+                $post->is_approved = true;
+                $post->number = ++$number;
+
+                $post->save();
+            }
+            
+            $discussion->refreshCommentCount();
+            $discussion->refreshLastPost();
+            $discussion->refreshParticipantCount();
+            $discussion->save();
         }
 
         // $this->enableForeignKeyChecks();
