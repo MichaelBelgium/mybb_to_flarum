@@ -3,19 +3,31 @@
   "description": "Migrate a MyBB Forum to a fresh Flarum instance",
   "type": "flarum-extension",
   "require": {
-    "flarum/core": "^0.1.0-beta.14"
+    "flarum/core": "^1.0"
   },
   "license": "MIT",
   "authors": [
     {
       "name": "Michael V.",
-      "email": "michael@michaelbelgium.me"
+      "email": "michael@michaelbelgium.me",
+      "homepage": "http://michaelbelgium.me"
+    }
+  ],
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/MichaelBelgium"
     }
   ],
   "autoload": {
     "psr-4": {
       "Michaelbelgium\\Mybbtoflarum\\": "src/"
     }
+  },
+  "support": {
+    "issues": "https://github.com/michaelbelgium/mybb_to_flarum/issues",
+    "source": "https://github.com/michaelbelgium/mybb_to_flarum",
+    "forum": "https://discuss.flarum.org/d/5506"
   },
   "extra": {
     "flarum-extension": {

@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Contracts\View\Factory;
 use Flarum\Extend\Console;
 use Flarum\Extend\Locales;
 use Flarum\Extend\Routes;
@@ -11,20 +10,20 @@ use Michaelbelgium\Mybbtoflarum\Controllers\MybbToFlarumController;
 use s9e\TextFormatter\Configurator;
 
 return [
-	new Locales(__DIR__ . '/locale'),
-	(new Frontend('admin'))
-		->route('/mybb-to-flarum', 'mybbtoflarum')
-		->css(__DIR__ . '/less/admin.less')
-		->js(__DIR__ .'/js/dist/admin.js'),
+    new Locales(__DIR__ . '/locale'),
+    (new Frontend('admin'))
+        ->css(__DIR__ . '/less/admin.less')
+        ->js(__DIR__ .'/js/dist/admin.js'),
 
-	(new Routes('api'))
-		->post('/mybb-to-flarum', 'mybbtoflarum.execute', MybbToFlarumController::class),
+    (new Routes('api'))
+        ->post('/mybb-to-flarum', 'mybbtoflarum.execute', MybbToFlarumController::class),
 
-	(new Formatter)->configure(function (Configurator $config) {
-		$config->BBCodes->delete("SIZE");
-		$config->BBCodes->addFromRepository('ALIGN');
-		$config->BBCodes->addFromRepository('HR');
-		$config->BBCodes->addCustom('[size={CHOICE=large,small,xx-small,x-small,medium,x-large,xx-large}]{TEXT}[/size]','<span style="font-size:{CHOICE}">{TEXT}</span>');
-	}),
+    (new Formatter)->configure(function (Configurator $config) {
+        $config->BBCodes->delete("SIZE");
+        $config->BBCodes->addFromRepository('ALIGN');
+        $config->BBCodes->addFromRepository('HR');
+        $config->BBCodes->addCustom('[size={CHOICE=large,small,xx-small,x-small,medium,x-large,xx-large}]{TEXT}[/size]','<span style="font-size:{CHOICE}">{TEXT}</span>');
+    }),
+
     (new Console())->command(MybbToFlarumCommand::class)
 ];
