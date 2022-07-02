@@ -6,7 +6,7 @@ use mysqli;
 
 class QueryHelper
 {
-    protected $step;
+    protected $step = 500;
     protected $offset;
     /**
      * @var mysqli
@@ -14,16 +14,17 @@ class QueryHelper
     private $connection;
     private $statement;
 
-    public function __construct(mysqli $connection, string $query, $step = 500, $offset = 0)
+    public function __construct(mysqli $connection, string $query, $offset = 0)
     {
-        $this->step = $step;
         $this->offset = $offset;
         $this->connection = $connection;
         $this->statement = $this->connection->prepare("$query LIMIT ?,?");
-        $this->statement->bind_param('ii', $this->offset, $this->limit);
+        /*$this->statement->attr_set(MYSQLI_STMT_ATTR_CURSOR_TYPE, MYSQLI_CURSOR_TYPE_READ_ONLY);
+        $this->statement->attr_set(MYSQLI_STMT_ATTR_PREFETCH_ROWS, $this->step);*/
+        $this->statement->bind_param('ii', $this->offset, $this->step);
     }
 
-    public function fetch()
+    public function fetch(): \Generator
     {
         $stmtResult = $this->statement->execute();
         $result = $this->statement->get_result();
