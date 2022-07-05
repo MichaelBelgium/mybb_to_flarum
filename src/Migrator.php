@@ -19,12 +19,9 @@ use Ramsey\Uuid\Uuid;
  */
 class Migrator
 {
-    /**
-     * @var MyBBExtractor
-     */
-    private $extractor;
-    private $mybb_path;
-    private $count = [
+    private MyBB16Extractor|MyBBExtractor $extractor;
+    private string $mybb_path;
+    private array $count = [
         "users" => 0,
         "groups" => 0,
         "categories" => 0,
@@ -36,9 +33,12 @@ class Migrator
     const FLARUM_AVATAR_PATH = "public/assets/avatars/";
     const FLARUM_UPLOAD_PATH = "public/assets/files/";
 
+    private Logger $logger;
+
     /**
      * Migrator constructor
      *
+     * @param Logger $logger
      * @param string $host
      * @param string $user
      * @param string $password
@@ -46,14 +46,16 @@ class Migrator
      * @param string $prefix
      * @param string $mybbPath
      */
-    public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '')
+    public function __construct(Logger $logger, string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '')
     {
-        $this->extractor = new MyBBExtractor($host,$user,$password,$db,$prefix,$mybbPath);
+        $this->extractor = new MyBB16Extractor($host,$user,$password,$db,$prefix,$mybbPath);
 
-        if(substr($mybbPath, -1) != '/')
+        if(!str_ends_with($mybbPath, '/'))
             $mybbPath .= '/';
 
         $this->mybb_path = $mybbPath;
+
+        $this->logger = $logger;
     }
 
     function __destruct()
@@ -64,7 +66,7 @@ class Migrator
     /**
      * Migrate custom user groups
      */
-    public function migrateUserGroups()
+    public function migrateUserGroups(): void
     {
         $groups = $this->extractor->getGroups();
 
@@ -78,6 +80,7 @@ class Migrator
 
             $this->count["groups"]++;
         }
+        $this->logger->info("migrated {$this->count['groups']}");
 
     }
 
@@ -87,7 +90,7 @@ class Migrator
      * @param bool $migrateAvatars
      * @param bool $migrateWithUserGroups
      */
-    public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false)
+    public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false): void
     {
         $this->disableForeignKeyChecks();
 
@@ -107,7 +110,6 @@ class Migrator
             $newUser->id = $row->uid;
             $newUser->joined_at = $row->regdate;
             $newUser->last_seen_at = $row->lastvisit;
-            $newUser->discussion_count = $row->threadnum;
             $newUser->comment_count = $row->postnum;
 
             if($migrateAvatars && !empty($this->getMybbPath()) && !empty($row->avatar))
@@ -125,7 +127,7 @@ class Migrator
             }
 
             $newUser->save();
-
+            $newUser->refreshDiscussionCount();
             if($migrateWithUserGroups)
             {
                 $userGroups = [(int)$row->usergroup];
@@ -144,7 +146,7 @@ class Migrator
                     $newUser->groups()->save(Group::find($group));
                 }
             }
-
+            $this->logger->debug("migrated user with id: {$newUser->id}");
             $this->count["users"]++;
         }
 
@@ -154,7 +156,7 @@ class Migrator
     /**
      * Transform/migrate categories and forums into tags
      */
-    public function migrateCategories()
+    public function migrateCategories(): void
     {
         $categories = $this->extractor->getCategories();
 
@@ -189,7 +191,8 @@ class Migrator
     public function migrateDiscussions(
         bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads,
         bool $migrateSoftDeletePosts, bool $migrateAttachments
-    ) {
+    ): void
+    {
         $migrateAttachments = class_exists('FoF\Upload\File') && $migrateAttachments;
 
         /** @var UrlGenerator $generator */

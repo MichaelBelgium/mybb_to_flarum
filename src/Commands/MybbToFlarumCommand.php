@@ -4,6 +4,7 @@ namespace Michaelbelgium\Mybbtoflarum\Commands;
 
 use Exception;
 use Flarum\Console\AbstractCommand;
+use Michaelbelgium\Mybbtoflarum\Logger;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
@@ -39,7 +40,7 @@ class MybbToFlarumCommand extends AbstractCommand
         $this
             ->setName('migrate-data:from-mybb')
             ->setDescription('Migrates data from an existing mybb forum');
-        
+
         foreach ($this->options as $option) {
             $this->addOption(...$option);
         }
@@ -86,6 +87,7 @@ class MybbToFlarumCommand extends AbstractCommand
 
         try {
             $migrator = new Migrator(
+                new Logger($this->output),
                 $host,
                 $user,
                 $password,
