@@ -6,13 +6,11 @@ use mysqli;
 
 class QueryHelper
 {
-    protected $step = 500;
-    protected $offset;
-    /**
-     * @var mysqli
-     */
-    private $connection;
-    private $statement;
+    protected int $step = 500;
+    protected int $offset;
+
+    private mysqli $connection;
+    private \mysqli_stmt|false $statement;
 
     public function __construct(mysqli $connection, string $query, $offset = 0)
     {
@@ -29,11 +27,12 @@ class QueryHelper
         $stmtResult = $this->statement->execute();
         $result = $this->statement->get_result();
         // if there is no rows, it means we are at the end of the table
-        while (!$stmtResult && $result->num_rows > 0) {
+        while ($stmtResult && $result->num_rows > 0) {
             // we fetch a row batch and yield rows until this batch is exhausted
             while ($row = $result->fetch_object()) {
                 yield $row;
             }
+            $result->free();
             // update offset and fetch again
             $this->offset += $result->num_rows;
             $stmtResult = $this->statement->execute();
