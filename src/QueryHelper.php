@@ -32,9 +32,11 @@ class QueryHelper
             while ($row = $result->fetch_object()) {
                 yield $row;
             }
-            $result->free();
             // update offset and fetch again
             $this->offset += $result->num_rows;
+
+            $result->free();
+
             $stmtResult = $this->statement->execute();
             $result = $this->statement->get_result();
         }

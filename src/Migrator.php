@@ -2,6 +2,7 @@
 namespace Michaelbelgium\Mybbtoflarum;
 
 use Carbon\Carbon;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Flarum\User\User;
 use Flarum\Tags\Tag;
 use Flarum\Group\Group;
@@ -30,10 +31,20 @@ class Migrator
         "attachments" => 0,
     ];
 
+    private array $offsets = [
+        "users" => 0,
+        "groups" => 0,
+        "categories" => 0,
+        "discussions" => 0,
+        // Posts and Attachments are part of each discussion
+    ];
+
     const FLARUM_AVATAR_PATH = "public/assets/avatars/";
     const FLARUM_UPLOAD_PATH = "public/assets/files/";
 
     private Logger $logger;
+    private ?Filesystem $countsDir = null;
+    private string $countsPath;
 
     /**
      * Migrator constructor
@@ -45,8 +56,9 @@ class Migrator
      * @param string $db
      * @param string $prefix
      * @param string $mybbPath
+     * @param array|null $offsetsCount
      */
-    public function __construct(Logger $logger, string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '')
+    public function __construct(Logger $logger, string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '', array $offsetsCount = null)
     {
         $this->extractor = new MyBB16Extractor($host,$user,$password,$db,$prefix,$mybbPath);
 
@@ -56,6 +68,9 @@ class Migrator
         $this->mybb_path = $mybbPath;
 
         $this->logger = $logger;
+        if($offsetsCount !== null){
+            $this->offsets = $offsetsCount;
+        }
     }
 
     function __destruct()
@@ -63,15 +78,29 @@ class Migrator
 
     }
 
+    public function setCountsDir( Filesystem $dir, string $path): void
+    {
+        $this->countsDir = $dir;
+        $this->countsPath = $path;
+    }
+
+    public function saveCounts(): bool
+    {
+        return $this->countsDir->put($this->countsPath, json_encode($this->count));
+    }
+
     /**
      * Migrate custom user groups
      */
     public function migrateUserGroups(): void
     {
-        $groups = $this->extractor->getGroups();
+        if($this->offsets['groups'] === 0 ) { //only delete if we're not resuming
+            Group::where('id', '>', '4')->delete();
+        } else {
+            $this->logger->info("restarting categories migration from position {$this->offsets['categories']}");
+        }
 
-        Group::where('id', '>', '4')->delete();
-
+        $groups = $this->extractor->getGroups($this->offsets['groups']);
         foreach($groups as $row)
         {
             $group = Group::build($row->title, $row->title, $this->generateRandomColor(), null);
@@ -79,8 +108,9 @@ class Migrator
             $group->save();
 
             $this->count["groups"]++;
+            $this->saveCounts();
         }
-        $this->logger->info("migrated {$this->count['groups']}");
+        $this->logger->info("migrated {$this->count['groups']} groups");
 
     }
 
@@ -94,9 +124,13 @@ class Migrator
     {
         $this->disableForeignKeyChecks();
 
-        $users = $this->extractor->getUsers();
+        if($this->offsets['users'] === 0 ) { //only delete if we're not resuming
+            User::truncate();
+        } else {
+            $this->logger->info("restarting users migration from position {$this->offsets['users']}");
+        }
 
-        User::truncate();
+        $users = $this->extractor->getUsers($this->offsets['users']);
 
         foreach($users as $row)
         {
@@ -148,6 +182,7 @@ class Migrator
             }
             $this->logger->debug("migrated user with id: {$newUser->id}");
             $this->count["users"]++;
+            $this->saveCounts();
         }
 
         $this->enableForeignKeyChecks();
@@ -158,9 +193,13 @@ class Migrator
      */
     public function migrateCategories(): void
     {
-        $categories = $this->extractor->getCategories();
+        if($this->offsets['categories'] === 0 ) { //only delete if we're not resuming
+            Tag::getQuery()->delete();
+        } else {
+            $this->logger->info("restarting categories migration from position {$this->offsets['categories']}");
+        }
 
-        Tag::getQuery()->delete();
+        $categories = $this->extractor->getCategories($this->offsets['categories']);
 
         foreach($categories as $row)
         {
@@ -177,6 +216,7 @@ class Migrator
             $tag->save();
 
             $this->count["categories"]++;
+            $this->saveCounts();
         }
     }
 
@@ -198,10 +238,15 @@ class Migrator
         /** @var UrlGenerator $generator */
         $generator = resolve(UrlGenerator::class);
 
-        $threads = $this->extractor->getThreads($migrateSoftDeletedThreads);
+        if($this->offsets['discussions'] === 0 ) { //only delete if we're not resuming
+            Discussion::getQuery()->delete();
+            Post::getQuery()->delete();
+        } else {
+            $this->logger->info("restarting discussions migration from position {$this->offsets['discussions']}");
+        }
 
-        Discussion::getQuery()->delete();
-        Post::getQuery()->delete();
+        $threads = $this->extractor->getThreads($migrateSoftDeletedThreads, $this->offsets['discussions']);
+
         $usersToRefresh = [];
 
         foreach($threads as $trow)

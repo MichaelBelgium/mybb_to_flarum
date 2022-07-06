@@ -4,6 +4,8 @@ namespace Michaelbelgium\Mybbtoflarum\Commands;
 
 use Exception;
 use Flarum\Console\AbstractCommand;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Contracts\Filesystem\Factory;
 use Michaelbelgium\Mybbtoflarum\Logger;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Symfony\Component\Console\Command\Command;
@@ -12,6 +14,8 @@ use Symfony\Component\Console\Question\Question;
 
 class MybbToFlarumCommand extends AbstractCommand
 {
+    static string $countsFilepath = 'MyBBToFlarum_counts.json';
+
     protected $options = [
         'host'=> ['host', null, InputOption::VALUE_REQUIRED, 'host of the mybb database'],
         'user'=> ['user', 'u', InputOption::VALUE_REQUIRED, 'user of the mybb database'],
@@ -24,6 +28,7 @@ class MybbToFlarumCommand extends AbstractCommand
         'threads-posts' => ['threads-posts', null, InputOption::VALUE_NONE, 'Import posts (excluding soft deleted posts/threads)'],
         'groups' => ['groups', null, InputOption::VALUE_NONE, 'Import groups'],
         'categories' => ['categories', null, InputOption::VALUE_NONE, 'Import categories'],
+        'resume' => ['resume', null, InputOption::VALUE_NONE, 'Try to resume from a previous migration'],
 
         //sub options for avatars
         'avatars' => ['avatars', null, InputOption::VALUE_NONE, 'Import avatars'],
@@ -34,6 +39,14 @@ class MybbToFlarumCommand extends AbstractCommand
         'soft-threads' => ['soft-threads', null, InputOption::VALUE_NONE, 'Import soft deleted threads'],
         'attachments' => ['attachments', null, InputOption::VALUE_NONE, 'Import attachments'],
     ];
+
+    private Filesystem $assetsDir;
+
+    public function __construct(Factory $filesystemFactory)
+    {
+        parent::__construct();
+        $this->assetsDir = $filesystemFactory->disk('flarum-assets');
+    }
 
     protected function configure()
     {
@@ -85,6 +98,16 @@ class MybbToFlarumCommand extends AbstractCommand
                 $this->info('WARNING: fof/upload not installed. Migrating attachments won\'t work.');
         }
 
+        $offsets = null;
+        if($this->input->getOption('resume')) {
+            try {
+                $offsets = json_decode($this->assetsDir->get($this::$countsFilepath),true);
+            } catch (Exception $e) {
+                $this->error("can't open offsets file, aborting");
+                return Command::FAILURE;
+            }
+        }
+
         try {
             $migrator = new Migrator(
                 new Logger($this->output),
@@ -93,8 +116,11 @@ class MybbToFlarumCommand extends AbstractCommand
                 $password,
                 $db,
                 $prefix,
-                $path
+                $path,
+                $offsets
             );
+
+            $migrator->setCountsDir($this->assetsDir, $this::$countsFilepath);
 
             if ($doGroups)
                 $migrator->migrateUserGroups();
