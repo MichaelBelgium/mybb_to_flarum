@@ -90,7 +90,7 @@ class Migrator
      * @param bool $migrateAvatars
      * @param bool $migrateWithUserGroups
      */
-    public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false)
+    public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false, bool $migratePrivateMessages = false)
     {
         $this->disableForeignKeyChecks();
         
@@ -154,7 +154,66 @@ class Migrator
             }
         }
 
+        if($migratePrivateMessages)
+            $this->migratePrivateMessages();
+
         $this->enableForeignKeyChecks();
+    }
+
+    private function migratePrivateMessages()
+    {
+        $messages = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}privatemessages WHERE subject NOT LIKE 'Re: %' AND subject NOT LIKE '%buddy request%' AND folder = 2 ORDER BY dateline");
+        
+        while($row = $messages->fetch_object())
+        {
+            // initial thread
+            $user = User::find($row->uid);
+            $discussion = Discussion::start($row->subject, $user);
+            
+            $discussion->slug = $this->slugDiscussion($row->subject);
+            $discussion->is_approved = true;
+            $discussion->is_private = true;
+            $discussion->created_at = $row->dateline;
+            $discussion->save();
+
+            $toUsers = unserialize($row->recipients)['to'];
+            $toUsers[] = $row->uid;
+
+            $discussion->recipientUsers()->saveMany(array_map(
+                fn ($userId) => User::find($userId)
+            , $toUsers));
+            
+
+            //pm replies
+            $number = 1;
+
+            $post = CommentPost::reply($discussion->id, $row->message, $user->id, null);
+            $post->created_at = $row->dateline;
+            $post->is_approved = true;
+            $post->number = $number;
+
+            $post->save();
+            $discussion->setFirstPost($post);
+
+            $replies = $this->getMybbConnection()->query("SELECT uid, toid, subject, message, dateline FROM {$this->getPrefix()}privatemessages WHERE folder = 2 AND subject = 'Re: {$row->subject}' ORDER BY dateline ASC");
+
+            while($rRow = $replies->fetch_object())
+            {
+                $user = User::find($rRow->uid);
+
+                $post = CommentPost::reply($discussion->id, $rRow->message, $user->id, null);
+                $post->created_at = $rRow->dateline;
+                $post->is_approved = true;
+                $post->number = ++$number;
+
+                $post->save();
+            }
+            
+            $discussion->refreshCommentCount();
+            $discussion->refreshLastPost();
+            $discussion->refreshParticipantCount();
+            $discussion->save();
+        }
     }
 
     /**

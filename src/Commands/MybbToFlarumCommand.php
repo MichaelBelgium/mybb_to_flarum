@@ -23,6 +23,7 @@ class MybbToFlarumCommand extends AbstractCommand
         'threads-posts' => ['threads-posts', null, InputOption::VALUE_NONE, 'Import posts (excluding soft deleted posts/threads)'],
         'groups' => ['groups', null, InputOption::VALUE_NONE, 'Import groups'],
         'categories' => ['categories', null, InputOption::VALUE_NONE, 'Import categories'],
+        'privatemessages' => ['privatemessages', null, InputOption::VALUE_NONE, 'Import private messages'],
 
         //sub options for avatars
         'avatars' => ['avatars', null, InputOption::VALUE_NONE, 'Import avatars'],
@@ -55,6 +56,7 @@ class MybbToFlarumCommand extends AbstractCommand
         $migrate_softposts = $this->input->getOption('soft-posts');
         $migrate_softthreads = $this->input->getOption('soft-threads');
         $migrate_attachments = $this->input->getOption('attachments');
+        $migrate_privatemessages = $this->input->getOption('privatemessages');
 
         $doUsers = $this->input->getOption('users');
         $doThreadsPosts = $this->input->getOption('threads-posts');
@@ -98,7 +100,7 @@ class MybbToFlarumCommand extends AbstractCommand
                 $migrator->migrateUserGroups();
 
             if ($doUsers)
-                $migrator->migrateUsers($migrate_avatars, $doGroups);
+                $migrator->migrateUsers($migrate_avatars, $doGroups, $migrate_privatemessages);
 
             if ($doCategories)
                 $migrator->migrateCategories();
