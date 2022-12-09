@@ -105,7 +105,7 @@ class Migrator
                 $newUser = User::register(
                     $row->username, 
                     $row->email, 
-                    password_hash(time(), PASSWORD_BCRYPT)
+                    ''
                 );
 
                 $newUser->activate();

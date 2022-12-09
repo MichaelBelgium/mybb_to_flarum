@@ -8,7 +8,7 @@ This is a [Flarum](https://flarum.org/) extension to migrate data from a mybb fo
 
 In your admin panel you can choose what to migrate.
 
-* Users (their passwords are ALL reset to a bcrypt hash from current time)
+* Users (their passwords are ALL reset and they'll have to click "Forgot password?")
 * Categories
 * Forums
 * Posts
