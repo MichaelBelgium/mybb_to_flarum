@@ -2,8 +2,8 @@
 namespace Michaelbelgium\Mybbtoflarum;
 
 use Carbon\Carbon;
-use Flarum\User\User;
 use Flarum\Tags\Tag;
+use Flarum\User\User;
 use Flarum\Group\Group;
 use Flarum\Discussion\Discussion;
 use Flarum\Http\UrlGenerator;
@@ -19,9 +19,9 @@ use Ramsey\Uuid\Uuid;
  */
 class Migrator
 {
-    private $connection;
-    private $db_prefix;
-    private $mybb_path;
+    private \mysqli $connection;
+    private string $db_prefix;
+    private string $mybb_path;
     private $count = [
         "users" => 0,
         "groups" => 0,
@@ -34,23 +34,13 @@ class Migrator
     const FLARUM_AVATAR_PATH = "public/assets/avatars/";
     const FLARUM_UPLOAD_PATH = "public/assets/files/";
 
-    /**
-     * Migrator constructor
-     *
-     * @param string $host
-     * @param string $user 		
-     * @param string $password
-     * @param string $db
-     * @param string $prefix
-     * @param string $mybbPath
-     */
     public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '') 
     {
         $this->connection = new \mysqli($host, $user, $password, $db);
         $this->connection->set_charset('utf8');
         $this->db_prefix = $prefix;
 
-        if(substr($mybbPath, -1) != '/')
+        if(!str_ends_with($mybbPath, '/'))
             $mybbPath .= '/';
         
         $this->mybb_path = $mybbPath;
@@ -86,9 +76,6 @@ class Migrator
 
     /**
      * Migrate users with their avatars and link them to their group(s)
-     *
-     * @param bool $migrateAvatars
-     * @param bool $migrateWithUserGroups
      */
     public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false)
     {

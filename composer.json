@@ -4,7 +4,8 @@
     "type": "flarum-extension",
     "require": {
         "php": "^8.4",
-        "flarum/core": "^2.0"
+        "flarum/core": "^2.0",
+        "flarum/tags": "^2.0"
     },
     "license": "MIT",
     "authors": [
@@ -42,7 +43,7 @@
             "optional-dependencies": [
                 "fof/upload"
             ]
-            }
+        }
     },
     "require-dev": {
         "fof/upload": "^2.0"

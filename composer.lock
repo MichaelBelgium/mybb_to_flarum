@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "071d0e26dd6bf15ee98915485e76916b",
+    "content-hash": "329be67ffeccae54c5e3d7ca89204c48",
     "packages": [
         {
             "name": "asispts/http-accept",
@@ -9035,13 +9035,306 @@
             "time": "2026-02-14T00:12:28+00:00"
         }
     ],
-    "packages-dev": [],
+    "packages-dev": [
+        {
+            "name": "enshrined/svg-sanitize",
+            "version": "0.22.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/darylldoyle/svg-sanitizer.git",
+                "reference": "0afa95ea74be155a7bcd6c6fb60c276c39984500"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/darylldoyle/svg-sanitizer/zipball/0afa95ea74be155a7bcd6c6fb60c276c39984500",
+                "reference": "0afa95ea74be155a7bcd6c6fb60c276c39984500",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-libxml": "*",
+                "php": "^7.1 || ^8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^6.5 || ^8.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "enshrined\\svgSanitize\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Daryll Doyle",
+                    "email": "daryll@enshrined.co.uk"
+                }
+            ],
+            "description": "An SVG sanitizer for PHP",
+            "support": {
+                "issues": "https://github.com/darylldoyle/svg-sanitizer/issues",
+                "source": "https://github.com/darylldoyle/svg-sanitizer/tree/0.22.0"
+            },
+            "time": "2025-08-12T10:13:48+00:00"
+        },
+        {
+            "name": "flarum/tags",
+            "version": "v2.0.0-beta.8",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/flarum/tags.git",
+                "reference": "cb63001082b4c4c4531e02d587a6adabe21c6587"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/flarum/tags/zipball/cb63001082b4c4c4531e02d587a6adabe21c6587",
+                "reference": "cb63001082b4c4c4531e02d587a6adabe21c6587",
+                "shasum": ""
+            },
+            "require": {
+                "flarum/core": "^2.0.0-beta.8"
+            },
+            "require-dev": {
+                "flarum/core": "*@dev",
+                "flarum/suspend": "^2.0",
+                "flarum/testing": "^2.0"
+            },
+            "type": "flarum-extension",
+            "extra": {
+                "flarum-cli": {
+                    "modules": {
+                        "js": true,
+                        "css": true,
+                        "admin": true,
+                        "forum": true,
+                        "gitConf": true,
+                        "styleci": true,
+                        "jsCommon": true,
+                        "prettier": false,
+                        "typescript": true,
+                        "bundlewatch": false,
+                        "editorConfig": true,
+                        "githubActions": true,
+                        "backendTesting": true
+                    }
+                },
+                "branch-alias": {
+                    "dev-main": "2.x-dev"
+                },
+                "flarum-extension": {
+                    "icon": {
+                        "name": "fas fa-tags",
+                        "color": "#fff",
+                        "backgroundColor": "#F28326"
+                    },
+                    "title": "Tags",
+                    "category": "feature"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Flarum\\Tags\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Organize discussions into a hierarchy of tags and categories.",
+            "homepage": "https://flarum.org",
+            "keywords": [
+                "discussion"
+            ],
+            "support": {
+                "forum": "https://discuss.flarum.org",
+                "issues": "https://github.com/flarum/framework/issues",
+                "source": "https://github.com/flarum/tags"
+            },
+            "funding": [
+                {
+                    "url": "https://flarum.org/donate/",
+                    "type": "website"
+                }
+            ],
+            "time": "2026-03-22T19:43:49+00:00"
+        },
+        {
+            "name": "fof/upload",
+            "version": "2.0.0-beta.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/FriendsOfFlarum/upload.git",
+                "reference": "5d2dad7649df21134accd36629ac04f35644750a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/FriendsOfFlarum/upload/zipball/5d2dad7649df21134accd36629ac04f35644750a",
+                "reference": "5d2dad7649df21134accd36629ac04f35644750a",
+                "shasum": ""
+            },
+            "require": {
+                "enshrined/svg-sanitize": "^0",
+                "ext-json": "*",
+                "flarum/core": "^2.0.0",
+                "guzzlehttp/guzzle": "^6.0 || ^7.0",
+                "ramsey/uuid": "^3.5.2 || ^4",
+                "softcreatr/php-mime-detector": "^4.0"
+            },
+            "replace": {
+                "flagrow/upload": "*"
+            },
+            "require-dev": {
+                "flarum/gdpr": "^2.0.0",
+                "flarum/phpstan": "^2.0.0",
+                "flarum/testing": "^2.0.0",
+                "league/flysystem-aws-s3-v3": "^3.31",
+                "overtrue/flysystem-qiniu": "^3.2"
+            },
+            "suggest": {
+                "league/flysystem-aws-s3-v3": "Uploads to AWS S3 using API version 3.",
+                "overtrue/flysystem-qiniu": "Uploads to QiNiu using API."
+            },
+            "type": "flarum-extension",
+            "extra": {
+                "flagrow": {
+                    "discuss": "https://discuss.flarum.org/d/4154"
+                },
+                "flarum-cli": {
+                    "modules": {
+                        "typescript": true,
+                        "githubActions": true,
+                        "backendTesting": true
+                    }
+                },
+                "branch-alias": {
+                    "dev-2.x": "2.x-dev"
+                },
+                "flarum-extension": {
+                    "icon": {
+                        "name": "fas fa-file-upload",
+                        "color": "#fff",
+                        "backgroundColor": "#e74c3c"
+                    },
+                    "title": "FoF Upload",
+                    "category": "feature"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "FoF\\Upload\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "FoF Team",
+                    "email": "team@friendsofflarum.org",
+                    "homepage": "https://friendsofflarum.org"
+                }
+            ],
+            "description": "The file upload extension for the Flarum forum with insane intelligence.",
+            "homepage": "https://friendsofflarum.org",
+            "keywords": [
+                "document",
+                "file",
+                "flarum",
+                "image",
+                "upload",
+                "uploader",
+                "video"
+            ],
+            "support": {
+                "forum": "https://discuss.flarum.org/d/4154",
+                "issues": "https://github.com/FriendsOfFlarum/upload/issues",
+                "source": "https://github.com/FriendsOfFlarum/upload"
+            },
+            "funding": [
+                {
+                    "url": "https://opencollective.com/fof/donate",
+                    "type": "website"
+                }
+            ],
+            "time": "2026-04-09T19:29:29+00:00"
+        },
+        {
+            "name": "softcreatr/php-mime-detector",
+            "version": "4.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/SoftCreatR/php-mime-detector.git",
+                "reference": "ae204590de58cc4655c8fbf9a2dfbcbb21dae4fe"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/SoftCreatR/php-mime-detector/zipball/ae204590de58cc4655c8fbf9a2dfbcbb21dae4fe",
+                "reference": "ae204590de58cc4655c8fbf9a2dfbcbb21dae4fe",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": ">=10.0",
+                "roave/security-advisories": "dev-latest",
+                "squizlabs/php_codesniffer": "^3.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "SoftCreatR\\MimeDetector\\": "src/SoftCreatR/MimeDetector"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "ISC"
+            ],
+            "authors": [
+                {
+                    "name": "Sascha Greuel",
+                    "email": "hello@1-2.dev"
+                },
+                {
+                    "name": "Sebastian Zimmer",
+                    "email": "morik@softcreatr.de"
+                }
+            ],
+            "description": "Mime Detector Decoder",
+            "homepage": "https://1-2.dev",
+            "keywords": [
+                "Magic Number",
+                "file type",
+                "mime",
+                "mime type"
+            ],
+            "support": {
+                "email": "hello@1-2.dev",
+                "issues": "https://github.com/SoftCreatR/php-mime-detector/issues",
+                "source": "https://github.com/SoftCreatR/php-mime-detector"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/softcreatr",
+                    "type": "github"
+                }
+            ],
+            "time": "2024-09-01T17:19:47+00:00"
+        }
+    ],
     "aliases": [],
     "minimum-stability": "beta",
     "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": {},
+    "platform": {
+        "php": "^8.4"
+    },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"
 }
