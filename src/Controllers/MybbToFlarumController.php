@@ -2,6 +2,7 @@
 namespace Michaelbelgium\Mybbtoflarum\Controllers;
 
 use Exception;
+use Flarum\Extension\ExtensionManager;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -13,18 +14,14 @@ use Laminas\Diactoros\Response\JsonResponse;
 class MybbToFlarumController implements RequestHandlerInterface
 {
     /**
-     * @var SettingsRepositoryInterface $settings
-     */
-    protected $settings;
-
-    /**
      * MybbToFlarumController constructor
      *
      * @param SettingsRepositoryInterface $settings
      */
-    public function __construct(SettingsRepositoryInterface $settings)
-    {
-        $this->settings = $settings;
+    public function __construct(
+        protected SettingsRepositoryInterface $settings,
+        protected ExtensionManager $extensionManager,
+    ) {
     }
 
     /**
@@ -68,7 +65,7 @@ class MybbToFlarumController implements RequestHandlerInterface
                 $migrator->migrateCategories();
             
             if($doThreadsPosts)
-                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $migrate_attachments);
+                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $this->extensionManager->isEnabled('fof-upload') && $migrate_attachments);
 
             $counts = $migrator->getProcessedCount();
 

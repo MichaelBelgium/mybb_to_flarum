@@ -4,6 +4,7 @@ namespace Michaelbelgium\Mybbtoflarum\Commands;
 
 use Exception;
 use Flarum\Console\AbstractCommand;
+use Flarum\Extension\ExtensionManager;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
@@ -11,6 +12,12 @@ use Symfony\Component\Console\Question\Question;
 
 class MybbToFlarumCommand extends AbstractCommand
 {
+    public function __construct(
+        protected ExtensionManager $extensionManager,
+    ) {
+        parent::__construct();
+    }
+
     protected $options = [
         'host'=> ['host', null, InputOption::VALUE_REQUIRED, 'host of the mybb database'],
         'user'=> ['user', 'u', InputOption::VALUE_REQUIRED, 'user of the mybb database'],
@@ -80,7 +87,7 @@ class MybbToFlarumCommand extends AbstractCommand
                 return Command::FAILURE;
             }
 
-            if(!class_exists('FoF\Upload\File'))
+            if(!$this->extensionManager->isEnabled('fof-upload'))
                 $this->info('WARNING: fof/upload not installed. Migrating attachments won\'t work.');
         }
 
@@ -104,7 +111,7 @@ class MybbToFlarumCommand extends AbstractCommand
                 $migrator->migrateCategories();
 
             if ($doThreadsPosts)
-                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $migrate_attachments);
+                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $this->extensionManager->isEnabled('fof-upload') && $migrate_attachments);
 
             $counts = $migrator->getProcessedCount();
 

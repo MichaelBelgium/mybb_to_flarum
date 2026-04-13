@@ -38,7 +38,13 @@
                 "name": "fas fa-exchange-alt",
                 "backgroundColor": "#FFB300",
                 "color": "#fff"
+            },
+            "optional-dependencies": [
+                "fof/upload"
+            ]
             }
-        }
+    },
+    "require-dev": {
+        "fof/upload": "^2.0"
     }
 }
