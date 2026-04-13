@@ -45,7 +45,7 @@ class MybbToFlarumCommand extends AbstractCommand
         }
     }
 
-    protected function fire()
+    protected function fire(): int
     {
         $host = $this->getOptionOrPrompt('host');
         $user = $this->getOptionOrPrompt('user');
