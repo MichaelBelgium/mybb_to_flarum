@@ -1,42 +1,44 @@
 {
-  "name": "michaelbelgium/mybb-to-flarum",
-  "description": "Migrate a MyBB Forum to a fresh Flarum instance",
-  "type": "flarum-extension",
-  "require": {
-    "flarum/core": "^1.0"
-  },
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Michael V.",
-      "email": "michael@michaelbelgium.me",
-      "homepage": "http://michaelbelgium.me"
+    "name": "michaelbelgium/mybb-to-flarum",
+    "description": "Migrate a MyBB Forum to a fresh Flarum instance",
+    "type": "flarum-extension",
+    "require": {
+        "php": "^8.4",
+        "flarum/core": "^2.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Michael V.",
+            "email": "michael@michaelbelgium.me",
+            "homepage": "http://michaelbelgium.me"
+        }
+    ],
+    "funding": [
+        {
+            "type": "github",
+            "url": "https://github.com/sponsors/MichaelBelgium"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Michaelbelgium\\Mybbtoflarum\\": "src/"
+        }
+    },
+    "support": {
+        "issues": "https://github.com/michaelbelgium/mybb_to_flarum/issues",
+        "source": "https://github.com/michaelbelgium/mybb_to_flarum",
+        "forum": "https://discuss.flarum.org/d/5506"
+    },
+    "minimum-stability": "beta",
+    "extra": {
+        "flarum-extension": {
+            "title": "MyBB to Flarum",
+            "icon": {
+                "name": "fas fa-exchange-alt",
+                "backgroundColor": "#FFB300",
+                "color": "#fff"
+            }
+        }
     }
-  ],
-  "funding": [
-    {
-      "type": "github",
-      "url": "https://github.com/sponsors/MichaelBelgium"
-    }
-  ],
-  "autoload": {
-    "psr-4": {
-      "Michaelbelgium\\Mybbtoflarum\\": "src/"
-    }
-  },
-  "support": {
-    "issues": "https://github.com/michaelbelgium/mybb_to_flarum/issues",
-    "source": "https://github.com/michaelbelgium/mybb_to_flarum",
-    "forum": "https://discuss.flarum.org/d/5506"
-  },
-  "extra": {
-    "flarum-extension": {
-      "title": "MyBB to Flarum",
-      "icon": {
-        "name": "fas fa-exchange-alt",
-        "backgroundColor": "#FFB300",
-        "color": "#fff"
-      }
-    }
-  }
 }
