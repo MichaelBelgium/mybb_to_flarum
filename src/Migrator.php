@@ -81,7 +81,7 @@ class Migrator
     {
         $this->disableForeignKeyChecks();
         
-        $users = $this->getMybbConnection()->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar, lastip FROM {$this->getPrefix()}users");
+        $users = $this->getMybbConnection()->query("SELECT uid, username, email, postnum, threadnum, FROM_UNIXTIME( regdate ) AS regdate, FROM_UNIXTIME( lastvisit ) AS lastvisit, usergroup, additionalgroups, avatar FROM {$this->getPrefix()}users");
         
         if($users->num_rows > 0)
         {
@@ -89,11 +89,10 @@ class Migrator
 
             while($row = $users->fetch_object())
             {
-                $newUser = User::register(
-                    $row->username, 
-                    $row->email, 
-                    ''
-                );
+                $newUser = new User();
+                $newUser->username = $row->username;
+                $newUser->email = $row->email;
+                $newUser->password = '';
 
                 $newUser->activate();
                 $newUser->id = $row->uid;
@@ -291,11 +290,10 @@ class Migrator
                             if(!copy($filePath,$toFilePath)) continue;
 
                             $uploader = User::find($arow->uid);
-                            $fileTemplate = new \FoF\Upload\Templates\FileTemplate();
+                            $fileTemplate = resolve(\FoF\Upload\Templates\FileTemplate::class);
 
                             $file = new \FoF\Upload\File();
-                            $file->post()->associate($post);
-                            $file->discussion()->associate($post->discussion);
+                            $file->posts()->save($post);
                             $file->actor()->associate($uploader);
                             $file->base_name = $arow->filename;
                             $file->path = $arow->attachname;
@@ -306,9 +304,6 @@ class Migrator
                             $file->uuid = Uuid::uuid4()->toString();
                             $file->tag = $fileTemplate;
                             $file->save();
-
-                            $file->post->content = $file->post->content . $fileTemplate->preview($file);
-                            $file->post->save();
 
                             $this->count["attachments"]++;
                         }

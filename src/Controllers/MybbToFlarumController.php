@@ -13,24 +13,12 @@ use Laminas\Diactoros\Response\JsonResponse;
 
 class MybbToFlarumController implements RequestHandlerInterface
 {
-    /**
-     * MybbToFlarumController constructor
-     *
-     * @param SettingsRepositoryInterface $settings
-     */
     public function __construct(
         protected SettingsRepositoryInterface $settings,
         protected ExtensionManager $extensionManager,
     ) {
     }
 
-    /**
-     * Handle the post request
-     *
-     * @param Request $request
-     *
-     * @return Response
-     */
     public function handle(Request $request): Response
     {
         $response = ["error" => false, "message" => ""];
