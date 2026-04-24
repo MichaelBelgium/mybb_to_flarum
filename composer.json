@@ -5,7 +5,8 @@
     "require": {
         "php": "^8.4",
         "flarum/core": "^2.0.0-rc.1",
-        "flarum/tags": "*"
+        "flarum/tags": "*",
+        "ext-mysqli": "*"
     },
     "license": "MIT",
     "authors": [

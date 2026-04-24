@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bbb78b56a03d04379d17d94180f98ea3",
+    "content-hash": "22697a66089c3e9b4c78c05741b56b17",
     "packages": [
         {
             "name": "asispts/http-accept",
@@ -9333,7 +9333,8 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.4"
+        "php": "^8.4",
+        "ext-mysqli": "*"
     },
     "platform-dev": {},
     "plugin-api-version": "2.9.0"

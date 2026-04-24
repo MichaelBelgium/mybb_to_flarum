@@ -18,7 +18,7 @@ In your admin panel you can choose what to migrate.
 
 ## Installation
 
-*This extension has been tested with MyBB v1.8.\* and Flarum v1.\**
+*This extension has been tested with MyBB v1.8.\*, PHP 8.4 and Flarum v2.0
 
 Execute this command in the root of your flarum installation: `composer require michaelbelgium/mybb-to-flarum`. Navigate to your admin panel, enable the extension and you get a new link in the admin navigation bar.
 
