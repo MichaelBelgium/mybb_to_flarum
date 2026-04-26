@@ -19,6 +19,7 @@ export default class MybbToFlarumPage extends ExtensionPage {
         this.migrateUsers = Stream(true);
         this.migrateCategories = Stream(true);
         this.migrateUserGroups = Stream(true);
+        this.debugMode = Stream(false);
     }
 
     content() {
@@ -115,6 +116,13 @@ export default class MybbToFlarumPage extends ExtensionPage {
                                 >
                                     {app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_soft_posts_label')}
                                 </Switch>
+
+                                <Switch
+                                    state={this.debugMode()}
+                                    onchange={this.debugMode}
+                                >
+                                    {app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.debug_mode_label')}
+                                </Switch>
                             </FieldSet>
 
                             <FieldSet label={app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.title')}>
@@ -207,6 +215,7 @@ export default class MybbToFlarumPage extends ExtensionPage {
                     doThreadsPosts: this.migrateThreadsPosts(),
                     doGroups: this.migrateUserGroups(),
                     doCategories: this.migrateCategories(),
+                    debug: this.debugMode(),
                 }
             }).then(data => {
                 alert(data.message);

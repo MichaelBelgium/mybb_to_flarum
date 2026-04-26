@@ -10,12 +10,14 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Support\Arr;
 use Laminas\Diactoros\Response\JsonResponse;
+use Psr\Log\LoggerInterface;
 
 class MybbToFlarumController implements RequestHandlerInterface
 {
     public function __construct(
         protected SettingsRepositoryInterface $settings,
         protected ExtensionManager $extensionManager,
+        protected LoggerInterface $logger,
     ) {
     }
 
@@ -32,6 +34,7 @@ class MybbToFlarumController implements RequestHandlerInterface
         $doThreadsPosts = Arr::get($request->getParsedBody(), 'doThreadsPosts');
         $doGroups = Arr::get($request->getParsedBody(), 'doGroups');
         $doCategories = Arr::get($request->getParsedBody(), 'doCategories');
+        $debug = Arr::get($request->getParsedBody(), 'debug');
 
         try {
             $migrator = new Migrator(
@@ -40,7 +43,8 @@ class MybbToFlarumController implements RequestHandlerInterface
                 $this->settings->get('mybb_password'),
                 $this->settings->get('mybb_db'),
                 $this->settings->get('mybb_prefix'),
-                $this->settings->get('mybb_path')
+                $this->settings->get('mybb_path'),
+                $debug ? $this->logger : null
             );
 
             if($doGroups)

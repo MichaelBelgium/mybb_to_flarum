@@ -25,5 +25,5 @@ return [
         $config->BBCodes->addCustom('[size={CHOICE=large,small,xx-small,x-small,medium,x-large,xx-large}]{TEXT}[/size]','<span style="font-size:{CHOICE}">{TEXT}</span>');
     }),
 
-    new Console()->command(MybbToFlarumCommand::class)
+    new Console()->command(MybbToFlarumCommand::class),
 ];

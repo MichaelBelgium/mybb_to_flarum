@@ -10,6 +10,7 @@ use Flarum\Http\UrlGenerator;
 use Flarum\Post\CommentPost;
 use Flarum\Post\Post;
 use Illuminate\Support\Str;
+use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -35,7 +36,7 @@ class Migrator
     const string FLARUM_AVATAR_PATH = "assets/avatars/";
     const string FLARUM_UPLOAD_PATH = "assets/files/";
 
-    public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '') 
+    public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '', private ?LoggerInterface $logger = null)
     {
         $this->connection = new \mysqli($host, $user, $password, $db);
         $this->connection->set_charset('utf8');
@@ -62,10 +63,12 @@ class Migrator
 
         if($groups->num_rows > 0)
         {
+            $this->logger?->debug("=== Starting user group migration (Amount: {$groups->num_rows}) ===");
             Group::where('id', '>', '4')->delete();
 
             while($row = $groups->fetch_object())
             {
+                $this->logger?->debug("Migrating group: {$row->title} (ID: {$row->gid})");
 
                 $group = new Group();
                 $group->id = $row->gid;
@@ -74,9 +77,13 @@ class Migrator
                 $group->color = $this->generateRandomColor();
                 $group->save();
 
+                $this->logger?->debug("Group '{$row->gid}' migrated successfully.");
+
                 $this->count["groups"]++;
             }
         }
+        else
+            $this->logger->debug("No user groups found to migrate.");
     }
 
     /**
@@ -90,10 +97,13 @@ class Migrator
         
         if($users->num_rows > 0)
         {
+            $this->logger?->debug("=== Starting user migration (Amount: {$users->num_rows}) ===");
             User::truncate();
 
             while($row = $users->fetch_object())
             {
+                $this->logger?->debug("Migrating user: {$row->username} (ID: {$row->uid})");
+
                 $newUser = new User();
                 $newUser->username = $row->username;
                 $newUser->email = $row->email;
@@ -110,14 +120,23 @@ class Migrator
                 {
                     $fullpath = $this->getMybbPath() . explode("?", $row->avatar)[0];
                     $avatar = basename($fullpath);
+                    $this->logger?->debug("Attempting to migrate avatar for user ID {$row->uid} from path: {$fullpath} to " . self::FLARUM_AVATAR_PATH . $avatar);
+
                     if(file_exists($fullpath))
                     {
                         if(!file_exists(self::FLARUM_AVATAR_PATH))
                             mkdir(self::FLARUM_AVATAR_PATH, 0777, true);
 
                         if(copy($fullpath,self::FLARUM_AVATAR_PATH.$avatar))
+                        {
                             $newUser->changeAvatarPath($avatar);
+                            $this->logger?->debug("Avatar for user ID {$row->uid} migrated successfully.");
+                        }
+                        else
+                            $this->logger?->debug("Failed to copy avatar for user ID {$row->uid}");
                     }
+                    else
+                        $this->logger?->debug("Avatar file for user ID {$row->uid} not found at path: {$fullpath}");
                 }
 
                 $newUser->save();
@@ -137,6 +156,7 @@ class Migrator
                     foreach($userGroups as $group)
                     {
                         if($group <= 7) continue;
+                        $this->logger?->debug("Associating user ID {$row->uid} with Flarum group ID: {$group}");
                         $newUser->groups()->save(Group::find($group));
                     }
                 }
@@ -157,14 +177,16 @@ class Migrator
 
         if($categories->num_rows > 0)
         {
+            $this->logger?->debug("=== Starting category migration (Amount: {$categories->num_rows}) ===");
             Tag::getQuery()->delete();
 
             while($row = $categories->fetch_object())
             {
                 if(!empty($row->linkto)) continue; //forums with links are not supported in flarum
 
-                $tag = Tag::build($row->name, $this->slugTag($row->name), $row->description, $this->generateRandomColor(), null, false);
+                $this->logger?->debug("Migrating category/forum: {$row->name} (ID: {$row->fid})");
 
+                $tag = Tag::build($row->name, $this->slugTag($row->name), $row->description, $this->generateRandomColor(), null, false);
                 $tag->id = $row->fid;
                 $tag->position = (int)$row->disporder - 1;
 
@@ -203,12 +225,16 @@ class Migrator
 
         if($threads->num_rows > 0)
         {
+            $this->logger?->debug("=== Starting discussion migration (Amount: {$threads->num_rows}) ===");
+
             Discussion::getQuery()->delete();
             Post::getQuery()->delete();
             $usersToRefresh = [];
 
             while($trow = $threads->fetch_object())
             {
+                $this->logger?->debug("Migrating thread: {$trow->subject} (ID: {$trow->tid})");
+
                 $tag = Tag::find($trow->fid);
 
                 $discussion = new Discussion();
@@ -216,8 +242,11 @@ class Migrator
                 $discussion->title = $trow->subject;
 
                 if($migrateWithUsers && $trow->uid != 0)
+                {
                     $discussion->user()->associate(User::find($trow->uid));
-                
+                    $this->logger?->debug("Associating discussion ID {$trow->tid} with user ID {$trow->uid}");
+                }
+
                 $discussion->slug = $this->slugDiscussion($trow->subject);
                 $discussion->is_approved = true;
                 $discussion->is_locked = $trow->closed == "1";
@@ -238,6 +267,7 @@ class Migrator
                 {
                     do {
                         $tag->discussions()->save($discussion);
+                        $this->logger?->debug("Associating discussion ID {$trow->tid} with tag ID {$tag->id}");
     
                         if(is_null($tag->parent_id))
                             $continue = false;
@@ -256,10 +286,13 @@ class Migrator
 
                 $posts = $this->getMybbConnection()->query($query);
 
+                $this->logger?->debug("=== Starting posts migration for thread {$trow->tid} (Amount: {$posts->num_rows}) ===");
+
                 $number = 0;
                 $firstPost = null;
                 while($prow = $posts->fetch_object())
                 {
+                    $this->logger?->debug("Migrating post ID {$prow->pid} for discussion/thread ID {$trow->tid}");
                     $user = User::find($prow->uid);
 
                     $post = new CommentPost();
@@ -286,16 +319,24 @@ class Migrator
                     {
                         $attachments = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}attachments WHERE pid = {$prow->pid}");
 
+                        $this->logger?->debug("=== Starting attachments migration for post ID {$prow->pid} (Amount: {$attachments->num_rows}) ===");
+
                         while ($arow = $attachments->fetch_object())
                         {
                             $filePath = $this->getMybbPath().'uploads/'.$arow->attachname;
                             $toFilePath = self::FLARUM_UPLOAD_PATH.$arow->attachname;
                             $dirFilePath = dirname($toFilePath);
 
+                            $this->logger?->debug("Migrating attachment ID {$arow->aid} for post ID {$prow->pid} from path: {$filePath} to {$toFilePath}");
+
                             if(!file_exists($dirFilePath))
                                 mkdir($dirFilePath, 0777, true);
 
-                            if(!copy($filePath,$toFilePath)) continue;
+                            if(!copy($filePath,$toFilePath))
+                            {
+                                $this->logger?->debug("Failed to copy attachment ID {$arow->aid} for post ID {$prow->pid}");
+                                continue;
+                            }
 
                             $uploader = User::find($arow->uid);
 
@@ -351,11 +392,13 @@ class Migrator
     private function enableForeignKeyChecks()
     {
         app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 1');
+        $this->logger?->debug("Foreign key checks enabled.");
     }
 
     private function disableForeignKeyChecks()
     {
         app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 0');
+        $this->logger?->debug("Foreign key checks disabled.");
     }
 
     /**

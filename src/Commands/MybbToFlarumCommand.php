@@ -6,6 +6,7 @@ use Exception;
 use Flarum\Console\AbstractCommand;
 use Flarum\Extension\ExtensionManager;
 use Michaelbelgium\Mybbtoflarum\Migrator;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Question\Question;
@@ -14,6 +15,7 @@ class MybbToFlarumCommand extends AbstractCommand
 {
     public function __construct(
         protected ExtensionManager $extensionManager,
+        protected LoggerInterface $logger,
     ) {
         parent::__construct();
     }
@@ -39,6 +41,8 @@ class MybbToFlarumCommand extends AbstractCommand
         'soft-posts' => ['soft-posts', null, InputOption::VALUE_NONE, 'Import soft deleted posts'],
         'soft-threads' => ['soft-threads', null, InputOption::VALUE_NONE, 'Import soft deleted threads'],
         'attachments' => ['attachments', null, InputOption::VALUE_NONE, 'Import attachments'],
+
+        'debug' => ['debug', null, InputOption::VALUE_NONE, 'Enable logging'],
     ];
 
     protected function configure()
@@ -69,6 +73,7 @@ class MybbToFlarumCommand extends AbstractCommand
         $doCategories = $this->input->getOption('categories');
         $path = $this->input->getOption('path');
         $prefix = $this->input->getOption('prefix');
+        $debug = $this->input->getOption('debug');
 
         if(!$doUsers && !$doCategories && !$doGroups && !$doThreadsPosts) {
             $this->error('Nothing will be imported. Please provide the option if you want to import users (--users), groups (--groups), threads/posts (--threads-posts) or categories (--categories).');
@@ -98,7 +103,8 @@ class MybbToFlarumCommand extends AbstractCommand
                 $password,
                 $db,
                 $prefix,
-                $path
+                $path,
+                $debug ? $this->logger : null
             );
 
             if ($doGroups)
