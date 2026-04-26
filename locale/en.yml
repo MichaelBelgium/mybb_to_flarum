@@ -17,7 +17,9 @@ michaelbelgium-mybb-to-flarum:
           password_label: Database password
           db_label: Database name
           prefix_label: Table prefix
-          path_label: Absolute MyBB path
+          path:
+            label: Absolute MyBB path
+            help_text: 'Absolute path to the MyBB installation, for example: /var/www/mybb.'
         general:
           title: General options
           migrate_users_label: Migrate users

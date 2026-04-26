@@ -133,7 +133,7 @@ export default class MybbToFlarumPage extends ExtensionPage {
                                 <div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.prefix_label')}</div>
                                 <input className="FormControl" type="text" bidi={this.setting('mybb_prefix', 'mybb_')} />
 
-                                <div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.path_label')}</div>
+                                <div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.path.label')}</div>
                                 <input
                                     className="FormControl"
                                     type="text"
@@ -141,6 +141,7 @@ export default class MybbToFlarumPage extends ExtensionPage {
                                     placeholder="/path/to/mybb"
                                     disabled={!needsPath}
                                 />
+                                <div className="helpText">{app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.mybb.path.help_text')}</div>
                             </FieldSet>
 
                             <Button
