@@ -18,7 +18,7 @@ In your admin panel you can choose what to migrate.
 
 ## Installation
 
-*This extension has been tested with MyBB v1.8.\*, PHP 8.4 and Flarum v2.0
+__This extension has been tested with MyBB v1.8.39, PHP 8.4 and Flarum v2.0__
 
 Execute this command in the root of your flarum installation: `composer require michaelbelgium/mybb-to-flarum`. Navigate to your admin panel, enable the extension and you get a new link in the admin navigation bar.
 
@@ -35,21 +35,21 @@ Usage:
   migrate-data:from-mybb [options]
 
 Options:
-      --host=HOST            host of the mybb database
-  -u, --user=USER            user of the mybb database
-  -p, --password[=PASSWORD]  password for the mybb database [default: ""]
-  -d, --db=DB                name of the mybb database
-      --prefix[=PREFIX]      prefix of the mybb database tables [default: "mybb_"]
+      --host=HOST            Host of the mybb database [default: "127.0.0.1"]
+  -u, --user=USER            User of the mybb database
+  -p, --password[=PASSWORD]  Password for the mybb database [default: ""]
+  -d, --db=DB                Name of the mybb database
+      --prefix[=PREFIX]      Prefix of the mybb database tables [default: "mybb_"]
+      --path[=PATH]          Path to the mybb forum (required for avatar and attachment migration) [default: ""]                                                                                        
       --users                Import users (excluding avatars)
       --threads-posts        Import posts (excluding soft deleted posts/threads)
       --groups               Import groups
       --categories           Import categories
       --avatars              Import avatars
-      --path[=PATH]          Path to the mybb forum (required for avatar and attachment migration) [default: ""]
       --soft-posts           Import soft deleted posts
       --soft-threads         Import soft deleted threads
       --attachments          Import attachments
-  -h, --help                 Display help for the given command. When no command is given display help for the list command   
+      --debug                Enable logging
   -n, --no-interaction       Do not ask any interactive question
 ```
 
