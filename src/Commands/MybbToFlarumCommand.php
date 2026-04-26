@@ -5,6 +5,7 @@ namespace Michaelbelgium\Mybbtoflarum\Commands;
 use Exception;
 use Flarum\Console\AbstractCommand;
 use Flarum\Extension\ExtensionManager;
+use Flarum\Settings\SettingsRepositoryInterface;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -15,53 +16,51 @@ class MybbToFlarumCommand extends AbstractCommand
 {
     public function __construct(
         protected ExtensionManager $extensionManager,
+        protected SettingsRepositoryInterface $settings,
         protected LoggerInterface $logger,
     ) {
         parent::__construct();
     }
 
-    protected $options = [
-        'host'=> ['host', null, InputOption::VALUE_REQUIRED, 'host of the mybb database'],
-        'user'=> ['user', 'u', InputOption::VALUE_REQUIRED, 'user of the mybb database'],
-        'password'=> ['password', 'p', InputOption::VALUE_OPTIONAL, 'password for the mybb database', ''],
-        'db'=> ['db', 'd', InputOption::VALUE_REQUIRED, 'name of the mybb database'],
-        'prefix'=> ['prefix', null, InputOption::VALUE_OPTIONAL, 'prefix of the mybb database tables', 'mybb_'],
-
-        //main options
-        'users' => ['users', null, InputOption::VALUE_NONE, 'Import users (excluding avatars)'],
-        'threads-posts' => ['threads-posts', null, InputOption::VALUE_NONE, 'Import posts (excluding soft deleted posts/threads)'],
-        'groups' => ['groups', null, InputOption::VALUE_NONE, 'Import groups'],
-        'categories' => ['categories', null, InputOption::VALUE_NONE, 'Import categories'],
-
-        //sub options for avatars
-        'avatars' => ['avatars', null, InputOption::VALUE_NONE, 'Import avatars'],
-        'path' => ['path', null, InputOption::VALUE_OPTIONAL, 'Path to the mybb forum (required for avatar and attachment migration)', ''],
-
-        //sub options for threads/posts
-        'soft-posts' => ['soft-posts', null, InputOption::VALUE_NONE, 'Import soft deleted posts'],
-        'soft-threads' => ['soft-threads', null, InputOption::VALUE_NONE, 'Import soft deleted threads'],
-        'attachments' => ['attachments', null, InputOption::VALUE_NONE, 'Import attachments'],
-
-        'debug' => ['debug', null, InputOption::VALUE_NONE, 'Enable logging'],
-    ];
-
     protected function configure()
     {
         $this
             ->setName('migrate-data:from-mybb')
-            ->setDescription('Migrates data from an existing mybb forum');
-        
-        foreach ($this->options as $option) {
-            $this->addOption(...$option);
-        }
+            ->setDescription('Migrates data from an existing mybb forum')
+
+            // connection options
+            ->addOption('host', null, InputOption::VALUE_REQUIRED, 'Host of the mybb database', $this->settings->get('mybb_host', '127.0.0.1'))
+            ->addOption('user', 'u',  InputOption::VALUE_REQUIRED, 'User of the mybb database', $this->settings->get('mybb_user'))
+            ->addOption('password', 'p',  InputOption::VALUE_OPTIONAL, 'Password for the mybb database', $this->settings->get('mybb_password', ''))
+            ->addOption('db', 'd',  InputOption::VALUE_REQUIRED, 'Name of the mybb database', $this->settings->get('mybb_db'))
+            ->addOption('prefix', null, InputOption::VALUE_OPTIONAL, 'Prefix of the mybb database tables', $this->settings->get('mybb_prefix', 'mybb_'))
+            ->addOption('path', null, InputOption::VALUE_OPTIONAL, 'Path to the mybb forum (required for avatar and attachment migration)', $this->settings->get('mybb_path', ''))
+
+            // main options
+            ->addOption('users', null, InputOption::VALUE_NONE, 'Import users (excluding avatars)')
+            ->addOption('threads-posts', null, InputOption::VALUE_NONE, 'Import posts (excluding soft deleted posts/threads)')
+            ->addOption('groups', null, InputOption::VALUE_NONE, 'Import groups')
+            ->addOption('categories', null, InputOption::VALUE_NONE, 'Import categories')
+
+            // sub options for users
+            ->addOption('avatars', null, InputOption::VALUE_NONE, 'Import avatars')
+
+            // sub options for threads/posts
+            ->addOption('soft-posts', null, InputOption::VALUE_NONE, 'Import soft deleted posts')
+            ->addOption('soft-threads', null, InputOption::VALUE_NONE, 'Import soft deleted threads')
+            ->addOption('attachments', null, InputOption::VALUE_NONE, 'Import attachments')
+
+            ->addOption('debug', null, InputOption::VALUE_NONE, 'Enable logging')
+        ;
     }
 
     protected function fire(): int
     {
         $host = $this->getOptionOrPrompt('host');
         $user = $this->getOptionOrPrompt('user');
-        $password = $this->getOptionOrPrompt('password');
+        $password = $this->input->getOption('password') ?? '';
         $db = $this->getOptionOrPrompt('db');
+
         $migrate_avatars = $this->input->getOption('avatars');
         $migrate_softposts = $this->input->getOption('soft-posts');
         $migrate_softthreads = $this->input->getOption('soft-threads');
@@ -75,24 +74,23 @@ class MybbToFlarumCommand extends AbstractCommand
         $prefix = $this->input->getOption('prefix');
         $debug = $this->input->getOption('debug');
 
-        if(!$doUsers && !$doCategories && !$doGroups && !$doThreadsPosts) {
+        if (!$doUsers && !$doCategories && !$doGroups && !$doThreadsPosts) {
             $this->error('Nothing will be imported. Please provide the option if you want to import users (--users), groups (--groups), threads/posts (--threads-posts) or categories (--categories).');
             return Command::FAILURE;
         }
 
-        if($doUsers && $migrate_avatars && empty($path)) {
+        if ($doUsers && $migrate_avatars && empty($path)) {
             $this->error('Mybb path (--path) needs to be provided when importing users + avatars');
             return Command::FAILURE;
         }
 
-        if($doThreadsPosts && $migrate_attachments) {
-
-            if(empty($path)) {
+        if ($doThreadsPosts && $migrate_attachments) {
+            if (empty($path)) {
                 $this->error('Mybb path (--path) needs to be provided when importing threads/posts + attachments');
                 return Command::FAILURE;
             }
 
-            if(!$this->extensionManager->isEnabled('fof-upload'))
+            if (!$this->extensionManager->isEnabled('fof-upload'))
                 $this->info('WARNING: fof/upload not installed. Migrating attachments won\'t work.');
         }
 
@@ -128,6 +126,20 @@ class MybbToFlarumCommand extends AbstractCommand
             $this->info("{$counts["discussions"]} discussions migrated");
             $this->info("{$counts["posts"]} posts migrated with {$counts["attachments"]} attachments");
 
+            $settingsMap = [
+                'mybb_host' => $host,
+                'mybb_user' => $user,
+                'mybb_password' => $password,
+                'mybb_db' => $db,
+                'mybb_prefix' => $prefix,
+                'mybb_path' => $path,
+            ];
+
+            foreach ($settingsMap as $key => $value)
+            {
+                if ($this->settings->get($key) !== $value)
+                    $this->settings->set($key, $value);
+            }
 
         } catch (Exception $e) {
             $this->error($e->getMessage());
@@ -137,18 +149,15 @@ class MybbToFlarumCommand extends AbstractCommand
         return Command::SUCCESS;
     }
 
-    protected function getOptionOrPrompt($optionName)
+    protected function getOptionOrPrompt(string $optionName)
     {
         $value = $this->input->getOption($optionName);
         if (empty($value)) {
-            if($this->input->getOption('no-interaction')) {
+            if ($this->input->getOption('no-interaction')) {
                 $this->error("missing required value for {$optionName}");
             }
             $helper = $this->getHelper('question');
-            $question = new Question("Please input the {$this->options[$optionName][3]}: ");
-            if($optionName == 'password') {
-                $question->setHidden(true);
-            }
+            $question = new Question("Please input the {$optionName}: ");
 
             $value = $helper->ask($this->input, $this->output, $question);
         }

@@ -39,6 +39,11 @@ class Migrator
     public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '', private ?LoggerInterface $logger = null)
     {
         $this->connection = new \mysqli($host, $user, $password, $db);
+
+        if ($this->connection->connect_error) {
+            throw new \RuntimeException('Could not connect to MyBB database: ' . $this->connection->connect_error);
+        }
+
         $this->connection->set_charset('utf8');
         $this->db_prefix = $prefix;
 
