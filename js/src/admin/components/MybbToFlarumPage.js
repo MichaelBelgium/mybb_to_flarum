@@ -194,28 +194,28 @@ export default class MybbToFlarumPage extends ExtensionPage {
             'mybb_prefix': this.setting('mybb_prefix', 'mybb_')(),
             'mybb_path': path,
         }).then(() => {
-            // app.request({
-            //     method: 'POST',
-            //     url: app.forum.attribute('apiUrl') + '/mybb-to-flarum',
-            //     body: {
-            //         avatars: this.migrateAvatars(),
-            //         softposts: this.migrateSoftPosts(),
-            //         softthreads: this.migrateSoftThreads(),
-            //         attachments: this.migrateAttachments(),
-            //         doUsers: this.migrateUsers(),
-            //         doThreadsPosts: this.migrateThreadsPosts(),
-            //         doGroups: this.migrateUserGroups(),
-            //         doCategories: this.migrateCategories(),
-            //     }
-            // }).then(data => {
-            //     alert(data.message);
-            //     this.loading = false;
-            //     m.redraw();
-            // }).catch(error => {
-            //     alert(error.response?.errors?.[0]?.detail ?? 'An error occurred during migration.');
-            //     this.loading = false;
-            //     m.redraw();
-            // });
+            app.request({
+                method: 'POST',
+                url: app.forum.attribute('apiUrl') + '/mybb-to-flarum',
+                body: {
+                    avatars: this.migrateAvatars(),
+                    softposts: this.migrateSoftPosts(),
+                    softthreads: this.migrateSoftThreads(),
+                    attachments: this.migrateAttachments(),
+                    doUsers: this.migrateUsers(),
+                    doThreadsPosts: this.migrateThreadsPosts(),
+                    doGroups: this.migrateUserGroups(),
+                    doCategories: this.migrateCategories(),
+                }
+            }).then(data => {
+                alert(data.message);
+                this.loading = false;
+                m.redraw();
+            }).catch(error => {
+                alert(error.response?.errors?.[0]?.detail ?? 'An error occurred during migration.');
+                this.loading = false;
+                m.redraw();
+            });
         }).catch(error => {
             alert('Failed to save settings: ' + (error.message ?? 'Unknown error'));
             this.loading = false;

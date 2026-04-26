@@ -51,7 +51,7 @@ class MybbToFlarumController implements RequestHandlerInterface
 
             if($doCategories)
                 $migrator->migrateCategories();
-            
+
             if($doThreadsPosts)
                 $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $this->extensionManager->isEnabled('fof-upload') && $migrate_attachments);
 

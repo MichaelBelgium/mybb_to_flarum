@@ -22,7 +22,8 @@ class Migrator
     private \mysqli $connection;
     private string $db_prefix;
     private string $mybb_path;
-    private $count = [
+    /** @var array<int> $count */
+    private array $count = [
         "users" => 0,
         "groups" => 0,
         "categories" => 0,
@@ -31,8 +32,8 @@ class Migrator
         "attachments" => 0,
     ];
 
-    const FLARUM_AVATAR_PATH = "public/assets/avatars/";
-    const FLARUM_UPLOAD_PATH = "public/assets/files/";
+    const string FLARUM_AVATAR_PATH = "assets/avatars/";
+    const string FLARUM_UPLOAD_PATH = "assets/files/";
 
     public function __construct(string $host, string $user, string $password, string $db, string $prefix, string $mybbPath = '') 
     {
@@ -65,8 +66,12 @@ class Migrator
 
             while($row = $groups->fetch_object())
             {
-                $group = Group::build($row->title, $row->title, $this->generateRandomColor(), null);
+
+                $group = new Group();
                 $group->id = $row->gid;
+                $group->name_singular = $row->title;
+                $group->name_plural = $row->title;
+                $group->color = $this->generateRandomColor();
                 $group->save();
 
                 $this->count["groups"]++;
@@ -103,7 +108,7 @@ class Migrator
 
                 if($migrateAvatars && !empty($this->getMybbPath()) && !empty($row->avatar))
                 {
-                    $fullpath = $this->getMybbPath().explode("?", $row->avatar)[0];
+                    $fullpath = $this->getMybbPath() . explode("?", $row->avatar)[0];
                     $avatar = basename($fullpath);
                     if(file_exists($fullpath))
                     {
@@ -124,7 +129,7 @@ class Migrator
                     if(!empty($row->additionalgroups))
                     {
                         $userGroups = array_merge(
-                            $userGroups, 
+                            $userGroups,
                             array_map("intval", explode(",", $row->additionalgroups))
                         );
                     }
@@ -210,7 +215,7 @@ class Migrator
                 $discussion->id = $trow->tid;
                 $discussion->title = $trow->subject;
 
-                if($migrateWithUsers)
+                if($migrateWithUsers && $trow->uid != 0)
                     $discussion->user()->associate(User::find($trow->uid));
                 
                 $discussion->slug = $this->slugDiscussion($trow->subject);
@@ -257,7 +262,10 @@ class Migrator
                 {
                     $user = User::find($prow->uid);
 
-                    $post = CommentPost::reply($discussion->id, $prow->message, optional($user)->id, null);
+                    $post = new CommentPost();
+                    $post->discussion_id = $discussion->id;
+                    $post->user_id = $user?->id;
+                    $post->setContentAttribute($prow->message);
                     $post->created_at = $prow->dateline;
                     $post->is_approved = true;
                     $post->number = ++$number;
@@ -275,7 +283,7 @@ class Migrator
                     $this->count["posts"]++;
 
                     if($migrateAttachments)
-                    {                        
+                    {
                         $attachments = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}attachments WHERE pid = {$prow->pid}");
 
                         while ($arow = $attachments->fetch_object())
@@ -290,7 +298,11 @@ class Migrator
                             if(!copy($filePath,$toFilePath)) continue;
 
                             $uploader = User::find($arow->uid);
-                            $fileTemplate = resolve(\FoF\Upload\Templates\FileTemplate::class);
+
+                            if (str_starts_with($arow->filetype, 'image/'))
+                                $fileTemplate = resolve(\FoF\Upload\Templates\ImageTemplate::class);
+                            else
+                                $fileTemplate = resolve(\FoF\Upload\Templates\FileTemplate::class);
 
                             $file = new \FoF\Upload\File();
                             $file->posts()->save($post);
@@ -300,10 +312,13 @@ class Migrator
                             $file->type = $arow->filetype;
                             $file->size = (int)$arow->filesize;
                             $file->upload_method = 'local';
-                            $file->url = $generator->to('forum')->path('assets/files/'.$arow->attachname);
+                            $file->url = $generator->to('forum')->path($toFilePath);
                             $file->uuid = Uuid::uuid4()->toString();
                             $file->tag = $fileTemplate;
                             $file->save();
+
+                            $post->setContentAttribute($post->content . $fileTemplate->preview($file));
+                            $post->save();
 
                             $this->count["attachments"]++;
                         }
