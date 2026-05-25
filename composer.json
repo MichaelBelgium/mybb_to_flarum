@@ -38,5 +38,8 @@
         "color": "#fff"
       }
     }
+  },
+  "require-dev": {
+    "fof/upload": "^1.9"
   }
 }
