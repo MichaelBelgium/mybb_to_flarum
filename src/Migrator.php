@@ -304,7 +304,11 @@ class Migrator
                             if(!copy($filePath,$toFilePath)) continue;
 
                             $uploader = User::find($arow->uid);
-                            $fileTemplate = new \FoF\Upload\Templates\FileTemplate();
+
+                            if (str_starts_with($arow->filetype, 'image/'))
+                                $fileTemplate = resolve(\FoF\Upload\Templates\ImageTemplate::class);
+                            else
+                                $fileTemplate = resolve(\FoF\Upload\Templates\FileTemplate::class);
 
                             $file = new \FoF\Upload\File();
                             $file->post()->associate($post);
