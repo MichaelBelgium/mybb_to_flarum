@@ -4,6 +4,7 @@ namespace Michaelbelgium\Mybbtoflarum\Commands;
 
 use Exception;
 use Flarum\Console\AbstractCommand;
+use Flarum\Extension\ExtensionManager;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
@@ -33,6 +34,17 @@ class MybbToFlarumCommand extends AbstractCommand
         'soft-threads' => ['soft-threads', null, InputOption::VALUE_NONE, 'Import soft deleted threads'],
         'attachments' => ['attachments', null, InputOption::VALUE_NONE, 'Import attachments'],
     ];
+
+    /**
+     * @var ExtensionManager $extensionManager
+     */
+    private $extensionManager;
+
+    public function __construct(ExtensionManager $extensionManager)
+    {
+        parent::__construct();
+        $this->extensionManager = $extensionManager;
+    }
 
     protected function configure()
     {
@@ -80,7 +92,7 @@ class MybbToFlarumCommand extends AbstractCommand
                 return Command::FAILURE;
             }
 
-            if(!class_exists('FoF\Upload\File'))
+            if(!$this->extensionManager->isEnabled('fof-upload'))
                 $this->info('WARNING: fof/upload not installed. Migrating attachments won\'t work.');
         }
 
@@ -104,7 +116,7 @@ class MybbToFlarumCommand extends AbstractCommand
                 $migrator->migrateCategories();
 
             if ($doThreadsPosts)
-                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $migrate_attachments);
+                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $this->extensionManager->isEnabled('fof-upload') && $migrate_attachments);
 
             $counts = $migrator->getProcessedCount();
 

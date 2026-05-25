@@ -199,8 +199,6 @@ class Migrator
         bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, 
         bool $migrateSoftDeletePosts, bool $migrateAttachments
     ) {
-        $migrateAttachments = class_exists('FoF\Upload\File') && $migrateAttachments;
-
         /** @var UrlGenerator $generator */
         $generator = resolve(UrlGenerator::class);
             
