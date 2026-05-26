@@ -143,6 +143,8 @@ class Migrator
                         );
                     }
 
+                    $userGroups = array_unique($userGroups);
+
                     foreach($userGroups as $group)
                     {
                         if($group <= 7) continue;
@@ -189,11 +191,6 @@ class Migrator
 
     /**
      * Migrate threads and their posts
-     *
-     * @param bool $migrateWithUsers Link with migrated users
-     * @param bool $migrateWithCategories Link with migrated categories
-     * @param bool $migrateSoftDeletedThreads Migrate also soft deleted threads from mybb
-     * @param bool $migrateSoftDeletePosts Migrate also soft deleted posts from mybb
      */
     public function migrateDiscussions(
         bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, 
