@@ -311,21 +311,20 @@ class Migrator
                                 $fileTemplate = resolve(\FoF\Upload\Templates\FileTemplate::class);
 
                             $file = new \FoF\Upload\File();
-                            $file->post()->associate($post);
-                            $file->discussion()->associate($post->discussion);
+                            $file->posts()->save($post);
                             $file->actor()->associate($uploader);
                             $file->base_name = $arow->filename;
                             $file->path = $arow->attachname;
                             $file->type = $arow->filetype;
                             $file->size = (int)$arow->filesize;
                             $file->upload_method = 'local';
-                            $file->url = $generator->to('forum')->path('assets/files/'.$arow->attachname);
+                            $file->url = $generator->to('forum')->path($toFilePath);
                             $file->uuid = Uuid::uuid4()->toString();
                             $file->tag = $fileTemplate;
                             $file->save();
 
-                            $file->post->content = $file->post->content . $fileTemplate->preview($file);
-                            $file->post->save();
+                            $post->setContentAttribute($post->content . $fileTemplate->preview($file));
+                            $post->save();
 
                             $this->count["attachments"]++;
                         }
