@@ -42,11 +42,13 @@
                 "color": "#fff"
             },
             "optional-dependencies": [
-                "fof/upload"
+                "fof/upload",
+                "fof/byobu"
             ]
         }
     },
     "require-dev": {
-        "fof/upload": "^2.0"
+        "fof/upload": "^2.0",
+        "fof/byobu": "^2.0.0"
     }
 }

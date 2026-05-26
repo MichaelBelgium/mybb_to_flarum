@@ -66,7 +66,7 @@ class MybbToFlarumCommand extends AbstractCommand
         $migrate_softposts = $this->input->getOption('soft-posts');
         $migrate_softthreads = $this->input->getOption('soft-threads');
         $migrate_attachments = $this->input->getOption('attachments');
-        $migrate_privatemessages = $this->input->getOption('privatemessages');
+        $migrate_privatemessages = $this->input->getOption('private-messages');
 
         $doUsers = $this->input->getOption('users');
         $doThreadsPosts = $this->input->getOption('threads-posts');
@@ -111,7 +111,7 @@ class MybbToFlarumCommand extends AbstractCommand
                 $migrator->migrateUserGroups();
 
             if ($doUsers)
-                $migrator->migrateUsers($migrate_avatars, $doGroups, $migrate_privatemessages);
+                $migrator->migrateUsers($migrate_avatars, $doGroups, $this->extensionManager->isEnabled('fof-byobu') && $migrate_privatemessages);
 
             if ($doCategories)
                 $migrator->migrateCategories();
