@@ -2,6 +2,7 @@
 namespace Michaelbelgium\Mybbtoflarum\Controllers;
 
 use Exception;
+use Flarum\Extension\ExtensionManager;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -9,31 +10,17 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Flarum\Settings\SettingsRepositoryInterface;
 use Illuminate\Support\Arr;
 use Laminas\Diactoros\Response\JsonResponse;
+use Psr\Log\LoggerInterface;
 
 class MybbToFlarumController implements RequestHandlerInterface
 {
-    /**
-     * @var SettingsRepositoryInterface $settings
-     */
-    protected $settings;
-
-    /**
-     * MybbToFlarumController constructor
-     *
-     * @param SettingsRepositoryInterface $settings
-     */
-    public function __construct(SettingsRepositoryInterface $settings)
-    {
-        $this->settings = $settings;
+    public function __construct(
+        protected SettingsRepositoryInterface $settings,
+        protected ExtensionManager $extensionManager,
+        protected LoggerInterface $logger,
+    ) {
     }
 
-    /**
-     * Handle the post request
-     *
-     * @param Request $request
-     *
-     * @return Response
-     */
     public function handle(Request $request): Response
     {
         $response = ["error" => false, "message" => ""];
@@ -47,6 +34,7 @@ class MybbToFlarumController implements RequestHandlerInterface
         $doThreadsPosts = Arr::get($request->getParsedBody(), 'doThreadsPosts');
         $doGroups = Arr::get($request->getParsedBody(), 'doGroups');
         $doCategories = Arr::get($request->getParsedBody(), 'doCategories');
+        $debug = Arr::get($request->getParsedBody(), 'debug');
 
         try {
             $migrator = new Migrator(
@@ -55,7 +43,8 @@ class MybbToFlarumController implements RequestHandlerInterface
                 $this->settings->get('mybb_password'),
                 $this->settings->get('mybb_db'),
                 $this->settings->get('mybb_prefix'),
-                $this->settings->get('mybb_path')
+                $this->settings->get('mybb_path'),
+                $debug ? $this->logger : null
             );
 
             if($doGroups)
@@ -66,9 +55,9 @@ class MybbToFlarumController implements RequestHandlerInterface
 
             if($doCategories)
                 $migrator->migrateCategories();
-            
+
             if($doThreadsPosts)
-                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $migrate_attachments);
+                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $this->extensionManager->isEnabled('fof-upload') && $migrate_attachments);
 
             $counts = $migrator->getProcessedCount();
 
