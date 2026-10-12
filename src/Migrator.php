@@ -184,53 +184,19 @@ class Migrator
         
         while($row = $messages->fetch_object())
         {
-            // initial thread
-            $user = User::find($row->uid);
-            $discussion = Discussion::start($row->subject, $user);
-            
-            $discussion->slug = $this->slugDiscussion($row->subject);
-            $discussion->is_approved = true;
-            $discussion->is_private = true;
-            $discussion->created_at = $row->dateline;
-            $discussion->save();
+            // first message
+            // todo replicate pms in table dialogs, dialog_user and dialog_messages
+//            $user = User::find($row->uid);
 
-            $toUsers = unserialize($row->recipients)['to'];
-            $toUsers[] = $row->uid;
-
-            $discussion->recipientUsers()->saveMany(array_map(
-                fn ($userId) => User::find($userId)
-            , $toUsers));
-            
 
             //pm replies
-            $number = 1;
-
-            $post = CommentPost::reply($discussion->id, $row->message, $user->id, null);
-            $post->created_at = $row->dateline;
-            $post->is_approved = true;
-            $post->number = $number;
-
-            $post->save();
-            $discussion->setFirstPost($post);
 
             $replies = $this->getMybbConnection()->query("SELECT uid, toid, subject, message, dateline FROM {$this->getPrefix()}privatemessages WHERE folder = 2 AND subject = 'Re: {$row->subject}' ORDER BY dateline ASC");
 
             while($rRow = $replies->fetch_object())
             {
-                $user = User::find($rRow->uid);
-
-                $post = CommentPost::reply($discussion->id, $rRow->message, $user->id, null);
-                $post->created_at = $rRow->dateline;
-                $post->is_approved = true;
-                $post->number = ++$number;
-
-                $post->save();
+                // todo
             }
-            
-            $discussion->refreshCommentCount();
-            $discussion->refreshLastPost();
-            $discussion->refreshParticipantCount();
-            $discussion->save();
         }
     }
 

@@ -111,7 +111,7 @@ class MybbToFlarumCommand extends AbstractCommand
                 $migrator->migrateUserGroups();
 
             if ($doUsers)
-                $migrator->migrateUsers($migrate_avatars, $doGroups, $this->extensionManager->isEnabled('fof-byobu') && $migrate_privatemessages);
+                $migrator->migrateUsers($migrate_avatars, $doGroups, $this->extensionManager->isEnabled('flarum-messages') && $migrate_privatemessages);
 
             if ($doCategories)
                 $migrator->migrateCategories();
