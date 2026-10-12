@@ -94,7 +94,7 @@ class Migrator
     /**
      * Migrate users with their avatars and link them to their group(s)
      */
-    public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false)
+    public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false, bool $migratePrivateMessages = false)
     {
         $this->disableForeignKeyChecks();
         
@@ -172,7 +172,32 @@ class Migrator
             }
         }
 
+        if($migratePrivateMessages)
+            $this->migratePrivateMessages();
+
         $this->enableForeignKeyChecks();
+    }
+
+    private function migratePrivateMessages()
+    {
+        $messages = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}privatemessages WHERE subject NOT LIKE 'Re: %' AND subject NOT LIKE '%buddy request%' AND folder = 2 ORDER BY dateline");
+        
+        while($row = $messages->fetch_object())
+        {
+            // first message
+            // todo replicate pms in table dialogs, dialog_user and dialog_messages
+//            $user = User::find($row->uid);
+
+
+            //pm replies
+
+            $replies = $this->getMybbConnection()->query("SELECT uid, toid, subject, message, dateline FROM {$this->getPrefix()}privatemessages WHERE folder = 2 AND subject = 'Re: {$row->subject}' ORDER BY dateline ASC");
+
+            while($rRow = $replies->fetch_object())
+            {
+                // todo
+            }
+        }
     }
 
     /**
