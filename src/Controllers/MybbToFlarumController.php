@@ -29,6 +29,7 @@ class MybbToFlarumController implements RequestHandlerInterface
         $migrate_softposts = Arr::get($request->getParsedBody(), 'softposts');
         $migrate_softthreads = Arr::get($request->getParsedBody(), 'softthreads');
         $migrate_attachments = Arr::get($request->getParsedBody(), 'attachments');
+        $migrate_privatemessages = Arr::get($request->getParsedBody(), 'privatemessages');
         
         $doUsers = Arr::get($request->getParsedBody(), 'doUsers');
         $doThreadsPosts = Arr::get($request->getParsedBody(), 'doThreadsPosts');
@@ -51,7 +52,7 @@ class MybbToFlarumController implements RequestHandlerInterface
                 $migrator->migrateUserGroups();
 
             if($doUsers)
-                $migrator->migrateUsers($migrate_avatars, $doGroups);
+                $migrator->migrateUsers($migrate_avatars, $doGroups, $this->extensionManager->isEnabled('flarum-messages') && $migrate_privatemessages);
 
             if($doCategories)
                 $migrator->migrateCategories();
@@ -61,7 +62,7 @@ class MybbToFlarumController implements RequestHandlerInterface
 
             $counts = $migrator->getProcessedCount();
 
-            $response["message"] = "Migration successful\n\n• {$counts["users"]} users\n• {$counts["groups"]} user groups\n• {$counts["categories"]} categories\n• {$counts["discussions"]} discussions\n• {$counts["posts"]} posts with {$counts["attachments"]} attachments";
+            $response["message"] = "Migration successful\n\n• {$counts["users"]} users\n• {$counts["private_messages"]} private messages\n• {$counts["groups"]} user groups\n• {$counts["categories"]} categories\n• {$counts["discussions"]} discussions\n• {$counts["posts"]} posts with {$counts["attachments"]} attachments";
         } catch (Exception $e) {
             $response["error"] = true;
             $response["message"] = $e->getMessage();
