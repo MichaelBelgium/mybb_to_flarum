@@ -41,10 +41,10 @@ class MybbToFlarumCommand extends AbstractCommand
             ->addOption('threads-posts', null, InputOption::VALUE_NONE, 'Import posts (excluding soft deleted posts/threads)')
             ->addOption('groups', null, InputOption::VALUE_NONE, 'Import groups')
             ->addOption('categories', null, InputOption::VALUE_NONE, 'Import categories')
-            ->addOption('private-messages', 'pm', InputOption::VALUE_NONE, 'import private messages')
 
             // sub options for users
             ->addOption('avatars', null, InputOption::VALUE_NONE, 'Import avatars')
+            ->addOption('private-messages', null, InputOption::VALUE_NONE, 'Import private messages (requires flarum/messages)')
 
             // sub options for threads/posts
             ->addOption('soft-posts', null, InputOption::VALUE_NONE, 'Import soft deleted posts')
@@ -86,6 +86,13 @@ class MybbToFlarumCommand extends AbstractCommand
             return Command::FAILURE;
         }
 
+        if ($migrate_privatemessages) {
+            if (!$doUsers)
+                $this->info('WARNING: private messages are only migrated together with users (--users). They will be skipped.');
+            elseif (!$this->extensionManager->isEnabled('flarum-messages'))
+                $this->info('WARNING: flarum/messages not enabled. Migrating private messages won\'t work.');
+        }
+
         if ($doThreadsPosts && $migrate_attachments) {
             if (empty($path)) {
                 $this->error('Mybb path (--path) needs to be provided when importing threads/posts + attachments');
@@ -124,6 +131,7 @@ class MybbToFlarumCommand extends AbstractCommand
             $this->info("Migration successful:");
             $this->info("{$counts["groups"]} user groups migrated");
             $this->info("{$counts["users"]} users migrated");
+            $this->info("{$counts["private_messages"]} private messages migrated");
             $this->info("{$counts["categories"]} categories migrated");
             $this->info("{$counts["discussions"]} discussions migrated");
             $this->info("{$counts["posts"]} posts migrated with {$counts["attachments"]} attachments");
