@@ -7,6 +7,7 @@ michaelbelgium-mybb-to-flarum:
         options:
           title: Other options
           migrate_avatars_label: Migrate avatars
+          migrate_private_messages_label: Migrate private messages (requires flarum/messages)
           migrate_soft_threads_label: Migrate soft deleted threads
           migrate_soft_posts_label: Migrate soft deleted posts
           migrate_attachments_label: Migrate attachments

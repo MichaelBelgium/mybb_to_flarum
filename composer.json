@@ -47,6 +47,7 @@
         }
     },
     "require-dev": {
-        "fof/upload": "^2.0"
+        "fof/upload": "^2.0",
+        "flarum/messages": "^2.0"
     }
 }

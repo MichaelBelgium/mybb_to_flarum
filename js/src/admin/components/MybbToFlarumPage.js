@@ -11,6 +11,7 @@ export default class MybbToFlarumPage extends ExtensionPage {
         super.oninit(vnode);
 
         this.migrateAvatars = Stream(false);
+        this.migratePrivateMessages = Stream(false);
         this.migrateSoftThreads = Stream(false);
         this.migrateSoftPosts = Stream(false);
         this.migrateAttachments = Stream(false);
@@ -43,6 +44,7 @@ export default class MybbToFlarumPage extends ExtensionPage {
                                         this.migrateUsers(value);
                                         if (!value) {
                                             this.migrateAvatars(false);
+                                            this.migratePrivateMessages(false);
                                         }
                                     }}
                                 >
@@ -89,6 +91,18 @@ export default class MybbToFlarumPage extends ExtensionPage {
                                     }}
                                 >
                                     {app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_avatars_label')}
+                                </Switch>
+
+                                <Switch
+                                    state={this.migratePrivateMessages()}
+                                    onchange={(value) => {
+                                        this.migratePrivateMessages(value);
+                                        if (value) {
+                                            this.migrateUsers(true);
+                                        }
+                                    }}
+                                >
+                                    {app.translator.trans('michaelbelgium-mybb-to-flarum.admin.content.form.options.migrate_private_messages_label')}
                                 </Switch>
 
                                 <Switch
@@ -208,6 +222,7 @@ export default class MybbToFlarumPage extends ExtensionPage {
                 url: app.forum.attribute('apiUrl') + '/mybb-to-flarum',
                 body: {
                     avatars: this.migrateAvatars(),
+                    privatemessages: this.migratePrivateMessages(),
                     softposts: this.migrateSoftPosts(),
                     softthreads: this.migrateSoftThreads(),
                     attachments: this.migrateAttachments(),
