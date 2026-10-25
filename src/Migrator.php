@@ -2,6 +2,9 @@
 namespace Michaelbelgium\Mybbtoflarum;
 
 use Carbon\Carbon;
+use Flarum\Messages\Dialog;
+use Flarum\Messages\DialogMessage;
+use Flarum\Messages\UserDialogState;
 use Flarum\Tags\Tag;
 use Flarum\User\User;
 use Flarum\Group\Group;
@@ -31,6 +34,7 @@ class Migrator
         "discussions" => 0,
         "posts" => 0,
         "attachments" => 0,
+        "private_messages" => 0,
     ];
 
     const string FLARUM_AVATAR_PATH = "assets/avatars/";
@@ -180,24 +184,101 @@ class Migrator
 
     private function migratePrivateMessages()
     {
-        $messages = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}privatemessages WHERE subject NOT LIKE 'Re: %' AND subject NOT LIKE '%buddy request%' AND folder = 2 ORDER BY dateline");
-        
+        // folder 1 = unread, 2 = sent items, drafts = 3, trash = 4
+        // pm is not in folder 2 ("sent items") if "Save a Copy" is unchecked
+        $messages = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}privatemessages WHERE folder NOT IN (3, 4) AND subject NOT LIKE '%buddy request%' ORDER BY dateline, pmid");
+
+        if($messages->num_rows == 0)
+        {
+            $this->logger?->debug("No private messages found to migrate.");
+            return;
+        }
+
+        $this->logger?->debug("=== Starting private message migration (Amount: {$messages->num_rows}) ===");
+
+        Dialog::truncate();
+        DialogMessage::truncate();
+        UserDialogState::truncate();
+
+        $migrated = [];
+        /** @var Dialog[] $dialogs */
+        $dialogs = [];
+
         while($row = $messages->fetch_object())
         {
-            // first message
-            // todo replicate pms in table dialogs, dialog_user and dialog_messages
-//            $user = User::find($row->uid);
+            $key = implode('-', [$row->fromid, $row->dateline, md5($row->recipients . $row->subject . $row->message)]);
 
-
-            //pm replies
-
-            $replies = $this->getMybbConnection()->query("SELECT uid, toid, subject, message, dateline FROM {$this->getPrefix()}privatemessages WHERE folder = 2 AND subject = 'Re: {$row->subject}' ORDER BY dateline ASC");
-
-            while($rRow = $replies->fetch_object())
+            if (array_key_exists($key, $migrated))
             {
-                // todo
+                $this->logger?->debug("Skipping private message ID {$row->pmid}, already migrated as private message ID {$migrated[$key]}");
+                continue;
+            }
+
+            $migrated[$key] = $row->pmid;
+
+            $from = (int)$row->fromid;
+            $recipients = unserialize($row->recipients, ['allowed_classes' => false]);
+            $recipients = array_merge($recipients['to'] ?? [], $recipients['bcc'] ?? []);
+
+            if (empty($recipients))
+                $this->logger?->debug("Skipping private message ID {$row->pmid}, no recipients");
+
+            foreach ($recipients as $to)
+            {
+                if($from == $to)
+                {
+                    $this->logger?->debug("Skipping private message ID {$row->pmid}: user ID {$from} and/or {$to} can't share a dialog");
+                    continue;
+                }
+
+                $pair = min($from, $to) . '-' . max($from, $to);
+
+                $this->logger?->debug("Migrating private message ID {$row->pmid} from user ID {$from} to user ID {$to}");
+
+                $message = new DialogMessage();
+                $message->user_id = $from;
+                $message->content = $row->message;
+                $message->created_at =
+                $message->updated_at = Carbon::createFromTimestamp($row->dateline);
+
+                if (array_key_exists($pair, $dialogs))
+                    $dialog = $dialogs[$pair];
+                else
+                    $dialog = $dialogs[$pair] = Dialog::create(['type' => 'direct']);
+
+                $message->dialog_id = $dialog->id;
+                $message->save();
+
+                if($dialog->first_message_id === null)
+                {
+                    $dialog->setFirstMessage($message);
+                    $dialog->created_at = $message->created_at;
+                }
+
+                $dialog->setLastMessage($message);
+
+                $this->count["private_messages"]++;
             }
         }
+
+        foreach ($dialogs as $pair => $dialog)
+        {
+            $dialog->save();
+
+            $members = [];
+
+            foreach(explode('-', $pair) as $userId)
+            {
+                //todo set last_read_at, last_read_message
+                $members[$userId] = [
+                    'joined_at' => $dialog->created_at,
+                ];
+            }
+
+            $dialog->users()->attach($members);
+        }
+
+        $this->logger?->debug("Private messages migrated into " . count($dialogs) . " dialogs.");
     }
 
     /**
