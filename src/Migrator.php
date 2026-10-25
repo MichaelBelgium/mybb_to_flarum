@@ -201,12 +201,21 @@ class Migrator
         UserDialogState::truncate();
 
         $migrated = [];
+        $currentDateline = null;
         /** @var Dialog[] $dialogs */
         $dialogs = [];
 
         while($row = $messages->fetch_object())
         {
-            $key = implode('-', [$row->fromid, $row->dateline, md5($row->recipients . $row->subject . $row->message)]);
+            // all copies of a pm share the same dateline and rows are ordered by dateline,
+            // so only the keys of the current dateline are needed to detect duplicates
+            if($row->dateline !== $currentDateline)
+            {
+                $currentDateline = $row->dateline;
+                $migrated = [];
+            }
+
+            $key =implode('-', [$row->fromid, $row->dateline, md5($row->recipients . $row->subject . $row->message)]);
 
             if (array_key_exists($key, $migrated))
             {
