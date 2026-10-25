@@ -12,6 +12,7 @@ use Flarum\Discussion\Discussion;
 use Flarum\Http\UrlGenerator;
 use Flarum\Post\CommentPost;
 use Flarum\Post\Post;
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
@@ -63,10 +64,36 @@ class Migrator
             $this->getMybbConnection()->close();
     }
 
+    public function migrate(
+        bool $groups, bool $users, bool $categories, bool $discussions, bool $avatars,
+        bool $privateMessages, bool $softThreads, bool $softPosts, bool $attachments
+    ): void
+    {
+        try
+        {
+            if($groups)
+                $this->migrateUserGroups();
+
+            if($users)
+                $this->migrateUsers($avatars, $groups, $privateMessages);
+
+            if($categories)
+                $this->migrateCategories();
+
+            if($discussions)
+                $this->migrateDiscussions($users, $categories, $softThreads, $softPosts, $attachments);
+        }
+        finally
+        {
+            // migrateUsers disables them, they shouldn't stay disabled when it fails
+            $this->enableForeignKeyChecks();
+        }
+    }
+
     /**
      * Migrate custom user groups
      */
-    public function migrateUserGroups()
+    private function migrateUserGroups()
     {
         $groups = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}usergroups WHERE type = 2");
 
@@ -98,7 +125,7 @@ class Migrator
     /**
      * Migrate users with their avatars and link them to their group(s)
      */
-    public function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false, bool $migratePrivateMessages = false)
+    private function migrateUsers(bool $migrateAvatars = false, bool $migrateWithUserGroups = false, bool $migratePrivateMessages = false)
     {
         $this->disableForeignKeyChecks();
         
@@ -107,7 +134,7 @@ class Migrator
         if($users->num_rows > 0)
         {
             $this->logger?->debug("=== Starting user migration (Amount: {$users->num_rows}) ===");
-            User::truncate();
+            User::getQuery()->delete();
 
             while($row = $users->fetch_object())
             {
@@ -196,9 +223,9 @@ class Migrator
 
         $this->logger?->debug("=== Starting private message migration (Amount: {$messages->num_rows}) ===");
 
-        Dialog::truncate();
-        DialogMessage::truncate();
-        UserDialogState::truncate();
+        Dialog::getQuery()->delete();
+        DialogMessage::getQuery()->delete();
+        UserDialogState::getQuery()->delete();
 
         $migrated = [];
         $currentDateline = null;
@@ -295,7 +322,7 @@ class Migrator
     /**
      * Transform/migrate categories and forums into tags
      */
-    public function migrateCategories()
+    private function migrateCategories()
     {
         $categories = $this->getMybbConnection()->query("SELECT fid, name, description, linkto, disporder, pid FROM {$this->getPrefix()}forums order by fid");
 
@@ -327,7 +354,7 @@ class Migrator
     /**
      * Migrate threads and their posts
      */
-    public function migrateDiscussions(
+    private function migrateDiscussions(
         bool $migrateWithUsers, bool $migrateWithCategories, bool $migrateSoftDeletedThreads, 
         bool $migrateSoftDeletePosts, bool $migrateAttachments
     ) {
@@ -510,13 +537,13 @@ class Migrator
 
     private function enableForeignKeyChecks()
     {
-        app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 1');
+        resolve(ConnectionInterface::class)->statement('SET FOREIGN_KEY_CHECKS = 1');
         $this->logger?->debug("Foreign key checks enabled.");
     }
 
     private function disableForeignKeyChecks()
     {
-        app('flarum.db')->statement('SET FOREIGN_KEY_CHECKS = 0');
+        resolve(ConnectionInterface::class)->statement('SET FOREIGN_KEY_CHECKS = 0');
         $this->logger?->debug("Foreign key checks disabled.");
     }
 

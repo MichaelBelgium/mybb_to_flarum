@@ -6,6 +6,7 @@ use Exception;
 use Flarum\Console\AbstractCommand;
 use Flarum\Extension\ExtensionManager;
 use Flarum\Settings\SettingsRepositoryInterface;
+use Illuminate\Database\ConnectionInterface;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -18,6 +19,7 @@ class MybbToFlarumCommand extends AbstractCommand
         protected ExtensionManager $extensionManager,
         protected SettingsRepositoryInterface $settings,
         protected LoggerInterface $logger,
+        protected ConnectionInterface $db,
     ) {
         parent::__construct();
     }
@@ -104,27 +106,19 @@ class MybbToFlarumCommand extends AbstractCommand
         }
 
         try {
-            $migrator = new Migrator(
-                $host,
-                $user,
-                $password,
-                $db,
-                $prefix,
-                $path,
-                $debug ? $this->logger : null
-            );
+            $migrator = new Migrator($host, $user, $password, $db, $prefix, $path, $debug ? $this->logger : null);
 
-            if ($doGroups)
-                $migrator->migrateUserGroups();
-
-            if ($doUsers)
-                $migrator->migrateUsers($migrate_avatars, $doGroups, $this->extensionManager->isEnabled('flarum-messages') && $migrate_privatemessages);
-
-            if ($doCategories)
-                $migrator->migrateCategories();
-
-            if ($doThreadsPosts)
-                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $this->extensionManager->isEnabled('fof-upload') && $migrate_attachments);
+            $this->db->transaction(fn() => $migrator->migrate(
+                $doGroups,
+                $doUsers,
+                $doCategories,
+                $doThreadsPosts,
+                $migrate_avatars,
+                $this->extensionManager->isEnabled('flarum-messages') && $migrate_privatemessages,
+                $migrate_softthreads,
+                $migrate_softposts,
+                $this->extensionManager->isEnabled('fof-upload') && $migrate_attachments,
+            ));
 
             $counts = $migrator->getProcessedCount();
 

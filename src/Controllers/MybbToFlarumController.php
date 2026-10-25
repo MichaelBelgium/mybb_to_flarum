@@ -3,6 +3,7 @@ namespace Michaelbelgium\Mybbtoflarum\Controllers;
 
 use Exception;
 use Flarum\Extension\ExtensionManager;
+use Illuminate\Database\ConnectionInterface;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -18,6 +19,7 @@ class MybbToFlarumController implements RequestHandlerInterface
         protected SettingsRepositoryInterface $settings,
         protected ExtensionManager $extensionManager,
         protected LoggerInterface $logger,
+        protected ConnectionInterface $db,
     ) {
     }
 
@@ -48,17 +50,17 @@ class MybbToFlarumController implements RequestHandlerInterface
                 $debug ? $this->logger : null
             );
 
-            if($doGroups)
-                $migrator->migrateUserGroups();
-
-            if($doUsers)
-                $migrator->migrateUsers($migrate_avatars, $doGroups, $this->extensionManager->isEnabled('flarum-messages') && $migrate_privatemessages);
-
-            if($doCategories)
-                $migrator->migrateCategories();
-
-            if($doThreadsPosts)
-                $migrator->migrateDiscussions($doUsers, $doCategories, $migrate_softthreads, $migrate_softposts, $this->extensionManager->isEnabled('fof-upload') && $migrate_attachments);
+            $this->db->transaction(fn() => $migrator->migrate(
+                $doGroups,
+                $doUsers,
+                $doCategories,
+                $doThreadsPosts,
+                $migrate_avatars,
+                $this->extensionManager->isEnabled('flarum-messages') && $migrate_privatemessages,
+                $migrate_softthreads,
+                $migrate_softposts,
+                $this->extensionManager->isEnabled('fof-upload') && $migrate_attachments,
+            ));
 
             $counts = $migrator->getProcessedCount();
 
