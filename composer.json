@@ -42,7 +42,8 @@
                 "color": "#fff"
             },
             "optional-dependencies": [
-                "fof/upload"
+                "fof/upload",
+                "flarum/messages"
             ]
         }
     },

@@ -64,7 +64,9 @@ class MybbToFlarumController implements RequestHandlerInterface
 
             $response["message"] = "Migration successful\n\n• {$counts["users"]} users\n• {$counts["private_messages"]} private messages\n• {$counts["groups"]} user groups\n• {$counts["categories"]} categories\n• {$counts["discussions"]} discussions\n• {$counts["posts"]} posts with {$counts["attachments"]} attachments";
 
-            if($doUsers && $migrate_privatemessages && !$this->extensionManager->isEnabled('flarum-messages'))
+            if($migrate_privatemessages && !$doUsers)
+                $response["message"] .= "\n\nPrivate messages were skipped: they are only migrated together with users.";
+            elseif($migrate_privatemessages && !$this->extensionManager->isEnabled('flarum-messages'))
                 $response["message"] .= "\n\nPrivate messages were skipped: flarum/messages is not enabled.";
         } catch (Exception $e) {
             $response["error"] = true;
