@@ -44,6 +44,7 @@ class MybbToFlarumCommand extends AbstractCommand
 
             // sub options for users
             ->addOption('avatars', null, InputOption::VALUE_NONE, 'Import avatars')
+            ->addOption('private-messages', null, InputOption::VALUE_NONE, 'Import private messages (requires flarum/messages)')
 
             // sub options for threads/posts
             ->addOption('soft-posts', null, InputOption::VALUE_NONE, 'Import soft deleted posts')
@@ -65,6 +66,7 @@ class MybbToFlarumCommand extends AbstractCommand
         $migrate_softposts = $this->input->getOption('soft-posts');
         $migrate_softthreads = $this->input->getOption('soft-threads');
         $migrate_attachments = $this->input->getOption('attachments');
+        $migrate_privatemessages = $this->input->getOption('private-messages');
 
         $doUsers = $this->input->getOption('users');
         $doThreadsPosts = $this->input->getOption('threads-posts');
@@ -82,6 +84,13 @@ class MybbToFlarumCommand extends AbstractCommand
         if ($doUsers && $migrate_avatars && empty($path)) {
             $this->error('Mybb path (--path) needs to be provided when importing users + avatars');
             return Command::FAILURE;
+        }
+
+        if ($migrate_privatemessages) {
+            if (!$doUsers)
+                $this->info('WARNING: private messages are only migrated together with users (--users). They will be skipped.');
+            elseif (!$this->extensionManager->isEnabled('flarum-messages'))
+                $this->info('WARNING: flarum/messages not enabled. Migrating private messages won\'t work.');
         }
 
         if ($doThreadsPosts && $migrate_attachments) {
@@ -109,7 +118,7 @@ class MybbToFlarumCommand extends AbstractCommand
                 $migrator->migrateUserGroups();
 
             if ($doUsers)
-                $migrator->migrateUsers($migrate_avatars, $doGroups);
+                $migrator->migrateUsers($migrate_avatars, $doGroups, $this->extensionManager->isEnabled('flarum-messages') && $migrate_privatemessages);
 
             if ($doCategories)
                 $migrator->migrateCategories();
@@ -122,6 +131,7 @@ class MybbToFlarumCommand extends AbstractCommand
             $this->info("Migration successful:");
             $this->info("{$counts["groups"]} user groups migrated");
             $this->info("{$counts["users"]} users migrated");
+            $this->info("{$counts["private_messages"]} private messages migrated");
             $this->info("{$counts["categories"]} categories migrated");
             $this->info("{$counts["discussions"]} discussions migrated");
             $this->info("{$counts["posts"]} posts migrated with {$counts["attachments"]} attachments");
