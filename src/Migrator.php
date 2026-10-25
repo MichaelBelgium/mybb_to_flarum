@@ -184,9 +184,9 @@ class Migrator
 
     private function migratePrivateMessages()
     {
-        // folder 1 = unread, 2 = sent items, drafts = 3, trash = 4
+        // folder 1 = inbox, 2 = sent items, 3 = drafts, 4 = trash
         // pm is not in folder 2 ("sent items") if "Save a Copy" is unchecked
-        $messages = $this->getMybbConnection()->query("SELECT * FROM {$this->getPrefix()}privatemessages WHERE folder NOT IN (3, 4) AND subject NOT LIKE '%buddy request%' ORDER BY dateline, pmid");
+        $messages = $this->getMybbConnection()->query("SELECT pmid, fromid, recipients, subject, message, dateline FROM {$this->getPrefix()}privatemessages WHERE folder NOT IN (3, 4) AND subject NOT LIKE '%buddy request%' ORDER BY dateline, pmid");
 
         if($messages->num_rows == 0)
         {
@@ -221,7 +221,12 @@ class Migrator
             $recipients = array_merge($recipients['to'] ?? [], $recipients['bcc'] ?? []);
 
             if (empty($recipients))
+            {
                 $this->logger?->debug("Skipping private message ID {$row->pmid}, no recipients");
+                continue;
+            }
+
+            $createdAt = Carbon::createFromTimestamp($row->dateline);
 
             foreach ($recipients as $to)
             {
@@ -239,7 +244,7 @@ class Migrator
                 $message->user_id = $from;
                 $message->content = $row->message;
                 $message->created_at =
-                $message->updated_at = Carbon::createFromTimestamp($row->dateline);
+                $message->updated_at = $createdAt;
 
                 if (array_key_exists($pair, $dialogs))
                     $dialog = $dialogs[$pair];
@@ -250,10 +255,7 @@ class Migrator
                 $message->save();
 
                 if($dialog->first_message_id === null)
-                {
                     $dialog->setFirstMessage($message);
-                    $dialog->created_at = $message->created_at;
-                }
 
                 $dialog->setLastMessage($message);
 
