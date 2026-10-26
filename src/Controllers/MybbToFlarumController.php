@@ -3,6 +3,7 @@ namespace Michaelbelgium\Mybbtoflarum\Controllers;
 
 use Exception;
 use Flarum\Extension\ExtensionManager;
+use Flarum\Http\RequestUtil;
 use Michaelbelgium\Mybbtoflarum\Migrator;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -43,6 +44,8 @@ class MybbToFlarumController implements RequestHandlerInterface
      */
     public function handle(Request $request): Response
     {
+        RequestUtil::getActor($request)->assertAdmin();
+
         $response = ["error" => false, "message" => ""];
 
         $migrate_avatars = Arr::get($request->getParsedBody(), 'avatars');
