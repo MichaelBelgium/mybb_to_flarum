@@ -119,7 +119,7 @@ class Migrator
             }
         }
         else
-            $this->logger->debug("No user groups found to migrate.");
+            $this->logger?->debug("No user groups found to migrate.");
     }
 
     /**
@@ -202,6 +202,8 @@ class Migrator
                 $this->count["users"]++;
             }
         }
+        else
+            $this->logger?->debug("No users found to migrate.");
 
         if($migratePrivateMessages)
             $this->migratePrivateMessages();
@@ -349,6 +351,8 @@ class Migrator
                 $this->count["categories"]++;
             }
         }
+        else
+            $this->logger?->debug("No categories/forums found to migrate.");
     }
 
     /**
@@ -533,6 +537,8 @@ class Migrator
                 }
             }
         }
+        else
+            $this->logger?->debug("No threads found to migrate.");
     }
 
     private function enableForeignKeyChecks()
